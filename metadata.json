@@ -1,0 +1,7 @@
+{
+  "name": "VoterField Canvassing App",
+  "description": "An admin dashboard for political campaigns to manage voter lists, create canvassing walk lists (turf), assign them to canvassers, and track their real-time progress.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

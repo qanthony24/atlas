@@ -1,0 +1,551 @@
+
+openapi: 3.0.3
+info:
+  title: VoterField API
+  version: 1.0.0
+  description: "Phase 2 Contract: Real API Specification for VoterField Canvassing Platform"
+servers:
+  - url: /api/v1
+    description: Production API
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # --- DOMAIN ENTITIES ---
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active, suspended, pending_delete]
+        plan_id:
+          type: string
+        limits:
+          type: object
+          additionalProperties:
+            type: integer
+        last_activity_at:
+          type: string
+          format: date-time
+
+    User:
+      type: object
+      required: [id, orgId, name, email, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [admin, canvasser]
+        location:
+          type: object
+          properties:
+            lat:
+              type: number
+            lng:
+              type: number
+
+    Voter:
+      type: object
+      required: [id, orgId, externalId, firstName, lastName, address, city, zip]
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        externalId:
+          type: string
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        suffix:
+          type: string
+        age:
+          type: integer
+        gender:
+          type: string
+        race:
+          type: string
+        party:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        unit:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        geom:
+          type: object
+          properties:
+            lat:
+              type: number
+            lng:
+              type: number
+        lastInteractionStatus:
+          type: string
+        lastInteractionTime:
+          type: string
+          format: date-time
+
+    WalkList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        voterIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        createdByUserId:
+          type: string
+          format: uuid
+
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        listId:
+          type: string
+          format: uuid
+        canvasserId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [assigned, in_progress, completed]
+        createdAt:
+          type: string
+          format: date-time
+
+    InteractionCreate:
+      type: object
+      required: [client_interaction_uuid, org_id, voter_id, occurred_at, channel, result_code]
+      properties:
+        client_interaction_uuid:
+          type: string
+          format: uuid
+          description: Idempotency Key
+        org_id:
+          type: string
+          format: uuid
+        voter_id:
+          type: string
+          format: uuid
+        assignment_id:
+          type: string
+          format: uuid
+        occurred_at:
+          type: string
+          format: date-time
+        channel:
+          type: string
+          enum: [canvass]
+        result_code:
+          type: string
+          enum: [contacted, not_home, refused, moved, inaccessible, deceased]
+        notes:
+          type: string
+        survey_responses:
+          type: object
+
+    Interaction:
+      allOf:
+        - $ref: '#/components/schemas/InteractionCreate'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            user_id:
+              type: string
+              format: uuid
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        org_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [import_voters, export_data]
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        result:
+          type: object
+        error:
+          type: string
+
+security:
+  - BearerAuth: []
+
+paths:
+  # --- IDENTITY & SESSION ---
+  /me:
+    get:
+      summary: Get Current User
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+
+  /org:
+    get:
+      summary: Get Current Organization
+      operationId: getCurrentOrg
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+
+  /auth/switch-role:
+    post:
+      summary: Switch Active Role (Dev/Simulated)
+      operationId: switchRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: [admin, canvasser]
+      responses:
+        '200':
+          description: Role Switched
+
+  # --- VOTER MANAGEMENT ---
+  /voters:
+    get:
+      summary: Get Voters
+      operationId: getVoters
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voter'
+    post:
+      summary: Create Single Voter
+      operationId: addVoter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                 firstName: { type: string }
+                 lastName: { type: string }
+                 address: { type: string }
+              # (Simplified for brevity, actual expects Partial<Voter>)
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Voter'
+
+  /voters/{id}:
+    patch:
+      summary: Update Voter
+      operationId: updateVoter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object # Partial<Voter>
+      responses:
+        '200':
+          description: Updated
+
+  # --- JOBS (ASYNC) ---
+  /jobs/import-voters:
+    post:
+      summary: Bulk Import Voters
+      operationId: importVoters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object # Partial<Voter>
+      responses:
+        '202':
+          description: Job Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+
+  /jobs/{id}:
+    get:
+      summary: Get Job Status
+      operationId: getJob
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+
+  # --- LISTS ---
+  /lists:
+    get:
+      summary: Get Walk Lists
+      operationId: getWalkLists
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WalkList'
+    post:
+      summary: Create Walk List
+      operationId: createWalkList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, voter_ids]
+              properties:
+                name:
+                  type: string
+                voter_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalkList'
+
+  # --- ASSIGNMENTS ---
+  /assignments:
+    get:
+      summary: Get Assignments
+      operationId: getAssignments
+      parameters:
+        - name: scope
+          in: query
+          schema:
+            type: string
+            enum: [me, org]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Assignment'
+    post:
+      summary: Assign List
+      operationId: assignList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [list_id, canvasser_id]
+              properties:
+                list_id:
+                  type: string
+                canvasser_id:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+
+  # --- INTERACTIONS ---
+  /interactions:
+    get:
+      summary: Get Interactions
+      operationId: getInteractions
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Interaction'
+    post:
+      summary: Log Interaction
+      operationId: logInteraction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InteractionCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Interaction'
+
+  # --- USERS ---
+  /users:
+    get:
+      summary: Get Users
+      operationId: getUsers
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /users/invite:
+    post:
+      summary: Invite User
+      operationId: inviteUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                role: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'

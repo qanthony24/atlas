@@ -1,0 +1,154 @@
+
+import { IDataClient } from './client';
+import { 
+    User, Organization, UserRole, Voter, WalkList, 
+    Assignment, InteractionCreate, Interaction, Job 
+} from '../types';
+import { components, paths } from './contract';
+
+// Helper types to extract response bodies from the contract
+type PathResponse<T extends keyof paths, M extends keyof paths[T]> = 
+    paths[T][M] extends { responses: { [key: number]: { content: { "application/json": infer R } } } } ? R : never;
+
+/**
+ * PRODUCTION API CLIENT
+ * 
+ * This implementation connects to the real backend defined in API_SPEC.md.
+ * It enforces the IDataClient contract strictly using types generated from openapi.yaml.
+ */
+export class RealDataClient implements IDataClient {
+    private baseUrl = '/api/v1';
+
+    private getHeaders(): HeadersInit {
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+        };
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        return headers;
+    }
+
+    // Generic request wrapper that aligns with the generated contract would be complex in TS without strict mode
+    // For this implementation, we manually align the return types to the domain types, relying on the fact
+    // that the contract types (components['schemas']) exactly match the domain types (types.ts).
+    private async request<T>(method: string, endpoint: string, body?: any): Promise<T> {
+        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            method,
+            headers: this.getHeaders(),
+            body: body ? JSON.stringify(body) : undefined,
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Handle unauthorized (redirect to login in a real app)
+                throw new Error("Unauthorized");
+            }
+            const errorText = await response.text();
+            throw new Error(`API Error ${response.status}: ${errorText}`);
+        }
+
+        const text = await response.text();
+        return text ? JSON.parse(text) : undefined;
+    }
+
+    // --- Session & Identity ---
+
+    async getCurrentUser(): Promise<User> {
+        // Enforce type from contract
+        return this.request<components['schemas']['User']>('GET', '/me');
+    }
+
+    async getCurrentOrg(): Promise<Organization> {
+        return this.request<components['schemas']['Organization']>('GET', '/org');
+    }
+
+    async switchRole(role: UserRole): Promise<void> {
+        await this.request<void>('POST', '/auth/switch-role', { role });
+    }
+
+    // --- Voter Management ---
+
+    async getVoters(params?: any): Promise<Voter[]> {
+        const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+        return this.request<components['schemas']['Voter'][]>('GET', `/voters${queryString}`);
+    }
+
+    async importVoters(voters: Partial<Voter>[]): Promise<Job> {
+        return this.request<components['schemas']['Job']>('POST', '/jobs/import-voters', voters);
+    }
+
+    async addVoter(voter: Partial<Voter>): Promise<Voter> {
+        return this.request<components['schemas']['Voter']>('POST', '/voters', voter);
+    }
+
+    async updateVoter(voterId: string, updates: Partial<Voter>): Promise<void> {
+        await this.request<void>('PATCH', `/voters/${voterId}`, updates);
+    }
+
+    // --- List Management ---
+
+    async getWalkLists(): Promise<WalkList[]> {
+        return this.request<components['schemas']['WalkList'][]>('GET', '/lists');
+    }
+
+    async createWalkList(name: string, voterIds: string[]): Promise<WalkList> {
+        // Strict adherence to openapi path /lists POST body
+        const body: paths['/lists']['post']['requestBody']['content']['application/json'] = {
+            name,
+            voter_ids: voterIds
+        };
+        return this.request<components['schemas']['WalkList']>('POST', '/lists', body);
+    }
+
+    // --- Field Operations (Assignments) ---
+
+    async getAssignments(): Promise<Assignment[]> {
+        // Default to 'org' scope for Admin view matching IDataClient expectation
+        return this.request<components['schemas']['Assignment'][]>('GET', '/assignments?scope=org');
+    }
+
+    async getMyAssignments(): Promise<Assignment[]> {
+        return this.request<components['schemas']['Assignment'][]>('GET', '/assignments?scope=me');
+    }
+
+    async assignList(listId: string, canvasserId: string): Promise<Assignment> {
+        const body: paths['/assignments']['post']['requestBody']['content']['application/json'] = {
+            list_id: listId,
+            canvasser_id: canvasserId
+        };
+        return this.request<components['schemas']['Assignment']>('POST', '/assignments', body);
+    }
+
+    // --- Interaction Logging ---
+
+    async logInteraction(interaction: InteractionCreate): Promise<Interaction> {
+        return this.request<components['schemas']['Interaction']>('POST', '/interactions', interaction);
+    }
+
+    async getInteractions(): Promise<Interaction[]> {
+        return this.request<components['schemas']['Interaction'][]>('GET', '/interactions');
+    }
+
+    // --- User Management ---
+
+    async getCanvassers(): Promise<User[]> {
+        return this.request<components['schemas']['User'][]>('GET', '/users?role=canvasser');
+    }
+
+    async addCanvasser(user: Partial<User>): Promise<User> {
+        const body: paths['/users/invite']['post']['requestBody']['content']['application/json'] = {
+            name: user.name || '',
+            email: user.email || '',
+            role: user.role || 'canvasser'
+        };
+        return this.request<components['schemas']['User']>('POST', '/users/invite', body);
+    }
+
+    // --- Platform Infrastructure ---
+
+    async getJob(jobId: string): Promise<Job> {
+        return this.request<components['schemas']['Job']>('GET', `/jobs/${jobId}`);
+    }
+}
