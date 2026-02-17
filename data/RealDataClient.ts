@@ -17,7 +17,10 @@ type PathResponse<T extends keyof paths, M extends keyof paths[T]> =
  * It enforces the IDataClient contract strictly using types generated from openapi.yaml.
  */
 export class RealDataClient implements IDataClient {
-    private baseUrl = '/api/v1';
+    // In production the frontend (Vercel) and backend (Railway) are different domains.
+    // Configure the API origin via Vite env var (must start with VITE_).
+    private apiOrigin = (import.meta as any).env?.VITE_API_BASE_URL || '';
+    private baseUrl = `${String(this.apiOrigin).replace(/\/$/, '')}/api/v1`;
 
     private getHeaders(): HeadersInit {
         const headers: HeadersInit = {
@@ -56,12 +59,13 @@ export class RealDataClient implements IDataClient {
     // --- Session & Identity ---
 
     async getCurrentUser(): Promise<User> {
-        // Enforce type from contract
-        return this.request<components['schemas']['User']>('GET', '/me');
+        const ctx = await this.request<{ user: components['schemas']['User']; org: components['schemas']['Organization'] }>('GET', '/me');
+        return ctx.user as any;
     }
 
     async getCurrentOrg(): Promise<Organization> {
-        return this.request<components['schemas']['Organization']>('GET', '/org');
+        const ctx = await this.request<{ user: components['schemas']['User']; org: components['schemas']['Organization'] }>('GET', '/me');
+        return ctx.org as any;
     }
 
     async switchRole(role: UserRole): Promise<void> {
@@ -72,11 +76,23 @@ export class RealDataClient implements IDataClient {
 
     async getVoters(params?: any): Promise<Voter[]> {
         const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-        return this.request<components['schemas']['Voter'][]>('GET', `/voters${queryString}`);
+        const res = await this.request<{ voters: components['schemas']['Voter'][] }>('GET', `/voters${queryString}`);
+        return (res as any).voters;
     }
 
     async importVoters(voters: Partial<Voter>[]): Promise<Job> {
-        return this.request<components['schemas']['Job']>('POST', '/jobs/import-voters', voters);
+        // Backend currently returns { id, status } (202 Accepted)
+        const res = await this.request<{ id: string; status: string }>('POST', '/jobs/import-voters', voters);
+        return {
+            id: (res as any).id,
+            org_id: '',
+            user_id: '',
+            type: 'import_voters',
+            status: (res as any).status as any,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            metadata: { source: 'json' }
+        } as any;
     }
 
     async addVoter(voter: Partial<Voter>): Promise<Voter> {
@@ -95,9 +111,10 @@ export class RealDataClient implements IDataClient {
 
     async createWalkList(name: string, voterIds: string[]): Promise<WalkList> {
         // Strict adherence to openapi path /lists POST body
-        const body: paths['/lists']['post']['requestBody']['content']['application/json'] = {
+        // Backend expects camelCase voterIds
+        const body: any = {
             name,
-            voter_ids: voterIds
+            voterIds
         };
         return this.request<components['schemas']['WalkList']>('POST', '/lists', body);
     }
@@ -114,9 +131,10 @@ export class RealDataClient implements IDataClient {
     }
 
     async assignList(listId: string, canvasserId: string): Promise<Assignment> {
-        const body: paths['/assignments']['post']['requestBody']['content']['application/json'] = {
-            list_id: listId,
-            canvasser_id: canvasserId
+        // Backend expects camelCase listId/canvasserId
+        const body: any = {
+            listId,
+            canvasserId
         };
         return this.request<components['schemas']['Assignment']>('POST', '/assignments', body);
     }

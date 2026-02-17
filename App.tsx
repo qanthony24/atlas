@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
+import Login from './components/Login';
 import VoterUniverse from './components/VoterUniverse';
 import TurfCutter from './components/TurfCutter';
 import CanvasserManager from './components/CanvasserManager';
@@ -55,6 +56,25 @@ const App: React.FC = () => {
 
     if (loading) {
         return <div className="flex h-screen items-center justify-center text-gray-500">Loading Campaign Core...</div>;
+    }
+
+    // If we have no authenticated user, show login instead of rendering a blank app.
+    if (!currentUser) {
+        return (
+            <AppContext.Provider value={{ 
+                client, 
+                currentUser, 
+                currentOrg, 
+                voters, 
+                canvassers, 
+                walkLists, 
+                assignments, 
+                interactions,
+                refreshData
+            }}>
+                <Login />
+            </AppContext.Provider>
+        );
     }
 
     return (
