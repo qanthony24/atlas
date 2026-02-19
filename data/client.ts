@@ -4,9 +4,9 @@ import { RealDataClient } from './RealDataClient';
 
 /**
  * API GATEWAY CONTRACT
- * 
+ *
  * The IDataClient interface defines the strict boundary between the UI and the Data Layer.
- * 
+ *
  * ⚠️ FROZEN CONTRACT RULES:
  * 1. The Frontend must ONLY access data via these methods.
  * 2. The Backend (or Mock) must implement these methods exactly as typed.
@@ -20,35 +20,41 @@ export interface IDataClient {
     /** Returns the current tenant organization. Throws if no org context. */
     getCurrentOrg(): Promise<Organization>;
     /** Development utility: simulates re-authenticating as a different role. */
-    switchRole(role: UserRole): Promise<void>; 
+    switchRole(role: UserRole): Promise<void>;
 
     // --- Voter Management ---
-    /** 
-     * Retrieves voters for the current org. 
-     * @param params - Optional search/filter parameters (e.g., { limit: 100, offset: 0 }) 
+    /**
+     * Retrieves voters for the current org.
+     * @param params - Optional search/filter parameters (e.g., { limit: 100, offset: 0 })
      */
     getVoters(params?: any): Promise<Voter[]>;
-    
-    /**
-     * Queues an asynchronous job to import voters.
-     * @returns A Job object to track progress.
-     */
-    importVoters(voters: Partial<Voter>[]): Promise<Job>; 
 
-    /** 
+    /**
+     * Queues an asynchronous job to import voters (JSON payload).
+     * Primarily useful for testing; production flow should prefer CSV upload.
+     */
+    importVoters(voters: Partial<Voter>[]): Promise<Job>;
+
+    /**
+     * Uploads a voter file (CSV/XLSX) for asynchronous import.
+     * This matches real user behavior.
+     */
+    uploadVotersFile(file: File): Promise<Job>;
+
+    /**
      * Adds a single voter synchronously.
      * @param voter - Minimal voter details (name, address).
      */
     addVoter(voter: Partial<Voter>): Promise<Voter>;
-    
+
     /** Updates specific fields on a voter record. Audit logged. */
     updateVoter(voterId: string, updates: Partial<Voter>): Promise<void>;
 
     // --- List Management ---
     /** Retrieves all walk lists for the current org. */
     getWalkLists(): Promise<WalkList[]>;
-    
-    /** 
+
+    /**
      * Creates a new static walk list.
      * @param voterIds - Array of UUIDs for voters included in this list.
      */
@@ -56,11 +62,11 @@ export interface IDataClient {
 
     // --- Field Operations (Assignments) ---
     /** Admin view: Get all assignments across the org. */
-    getAssignments(): Promise<Assignment[]>; 
-    
+    getAssignments(): Promise<Assignment[]>;
+
     /** Canvasser view: Get assignments for the current user only. */
-    getMyAssignments(): Promise<Assignment[]>; 
-    
+    getMyAssignments(): Promise<Assignment[]>;
+
     /** Assigns a specific list to a specific canvasser. */
     assignList(listId: string, canvasserId: string): Promise<Assignment>;
 
@@ -70,14 +76,14 @@ export interface IDataClient {
      * Must be idempotent based on `client_interaction_uuid`.
      */
     logInteraction(interaction: InteractionCreate): Promise<Interaction>;
-    
+
     /** Retrieves interaction history. */
     getInteractions(): Promise<Interaction[]>;
-    
+
     // --- User Management ---
     /** Returns all users with 'canvasser' role in the current org. */
     getCanvassers(): Promise<User[]>;
-    
+
     /** Invites a new canvasser to the org. */
     addCanvasser(user: Partial<User>): Promise<User>;
 
@@ -93,14 +99,14 @@ export class MockDataClient implements IDataClient {
     private assignments = [...mockAssignments];
     private interactions = [...mockInteractions];
     private currentOrg = mockOrg;
-    
+
     // Platform Stores (Mock Database Tables)
     private jobs: Job[] = [];
     private events: PlatformEvent[] = [];
     private auditLog: AuditLogEntry[] = [];
 
     // Simulate session
-    private currentUserId = 'user-admin'; 
+    private currentUserId = 'user-admin';
 
     // --- Internal Platform Helpers ---
 
@@ -168,7 +174,7 @@ export class MockDataClient implements IDataClient {
     private async executeWithContext<T>(operation: string, fn: () => Promise<T>): Promise<T> {
         const requestId = crypto.randomUUID(); // Simulated Request ID
         const context = { requestId, orgId: this.currentOrg.id, userId: this.currentUserId };
-        
+
         this.structuredLog(context, `Request Started: ${operation}`, {});
         const start = Date.now();
 
@@ -201,7 +207,7 @@ export class MockDataClient implements IDataClient {
     async switchRole(role: UserRole): Promise<void> {
         return this.executeWithContext('switchRole', async () => {
             if (role === 'canvasser') {
-                this.currentUserId = 'user-1'; 
+                this.currentUserId = 'user-1';
             } else {
                 this.currentUserId = 'user-admin';
             }
@@ -215,7 +221,7 @@ export class MockDataClient implements IDataClient {
                 const voterInteractions = this.interactions
                     .filter(i => i.voter_id === v.id)
                     .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
-                
+
                 const latest = voterInteractions[0];
                 return {
                     ...v,
@@ -230,7 +236,7 @@ export class MockDataClient implements IDataClient {
     async importVoters(newVoters: Partial<Voter>[]): Promise<Job> {
         return this.executeWithContext('importVoters', async () => {
             // 1. Create Job synchronously
-            const job = this.createJob('import_voters', { count: newVoters.length });
+            const job = this.createJob('import_voters', { count: newVoters.length, source: 'json' });
             this.logAudit('import.create', { jobId: job.id, count: newVoters.length });
             this.emitEvent('import.started', { jobId: job.id });
 
@@ -238,7 +244,7 @@ export class MockDataClient implements IDataClient {
             setTimeout(() => {
                 try {
                     this.updateJob(job.id, 'processing');
-                    
+
                     // Simulate processing delay
                     const imported: Voter[] = newVoters.map((v, i) => ({
                         id: `voter-new-${Date.now()}-${i}`,
@@ -275,6 +281,38 @@ export class MockDataClient implements IDataClient {
         });
     }
 
+    async uploadVotersFile(file: File): Promise<Job> {
+        return this.executeWithContext('uploadVotersFile', async () => {
+            // In mock mode, we just parse the CSV locally and call importVoters.
+            const text = await file.text();
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+            if (lines.length < 2) throw new Error('File is empty');
+
+            // Very lightweight parser: assume first row is headers and commas are safe enough for mock.
+            const headers = lines[0].split(',').map(h => h.trim());
+            const rows = lines.slice(1);
+            const voters: Partial<Voter>[] = rows.map(r => {
+                const vals = r.split(',');
+                const out: any = {};
+                headers.forEach((h, i) => { out[h] = vals[i]; });
+                // best-effort mapping for common fields
+                return {
+                    externalId: out.REG_NUMBER || out.externalId || out.external_id,
+                    firstName: out.FIRST_NAME || out.firstName || out.first_name,
+                    lastName: out.LAST_NAME || out.lastName || out.last_name,
+                    address: out.ADDRESS || out.address,
+                    city: out.CITY || out.city,
+                    state: out.STATE || out.state,
+                    zip: out.ZIP || out.zip,
+                    phone: out.PHONE || out.phone,
+                    party: out.PARTY || out.party,
+                };
+            });
+
+            return this.importVoters(voters);
+        });
+    }
+
     async addVoter(voter: Partial<Voter>): Promise<Voter> {
         return this.executeWithContext('addVoter', async () => {
              const newVoter: Voter = {
@@ -296,17 +334,17 @@ export class MockDataClient implements IDataClient {
                 state: voter.state || 'LA',
                 zip: voter.zip || '',
                 // Add some random jitter to location for demo purposes so they don't stack perfectly on 0,0
-                geom: { lat: 40.7128 + (Math.random() * 0.01), lng: -74.0060 + (Math.random() * 0.01) }, 
+                geom: { lat: 40.7128 + (Math.random() * 0.01), lng: -74.0060 + (Math.random() * 0.01) },
                 lastInteractionStatus: undefined,
                 lastInteractionTime: undefined
              };
-             
+
              this.voters.push(newVoter);
              this.logAudit('voter.create', { voterId: newVoter.id, name: `${newVoter.firstName} ${newVoter.lastName}` });
              return newVoter;
         });
     }
-    
+
     async getJob(jobId: string): Promise<Job> {
         return this.executeWithContext('getJob', async () => {
             const job = this.jobs.find(j => j.id === jobId);
@@ -317,7 +355,7 @@ export class MockDataClient implements IDataClient {
 
     async updateVoter(voterId: string, updates: Partial<Voter>): Promise<void> {
         return this.executeWithContext('updateVoter', async () => {
-            this.voters = this.voters.map(v => 
+            this.voters = this.voters.map(v =>
                 v.id === voterId ? { ...v, ...updates } : v
             );
             this.logAudit('voter.update', { voterId, fields: Object.keys(updates) });
@@ -350,7 +388,7 @@ export class MockDataClient implements IDataClient {
     }
 
     async getMyAssignments(): Promise<Assignment[]> {
-        return this.executeWithContext('getMyAssignments', async () => 
+        return this.executeWithContext('getMyAssignments', async () =>
             this.assignments.filter(a => a.canvasserId === this.currentUserId)
         );
     }

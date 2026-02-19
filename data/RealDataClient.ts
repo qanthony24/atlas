@@ -22,15 +22,18 @@ export class RealDataClient implements IDataClient {
     private apiOrigin = (import.meta as any).env?.VITE_API_BASE_URL || '';
     private baseUrl = `${String(this.apiOrigin).replace(/\/$/, '')}/api/v1`;
 
-    private getHeaders(): HeadersInit {
-        const headers: HeadersInit = {
-            'Content-Type': 'application/json',
-        };
+    private getAuthHeader(): HeadersInit {
+        const headers: HeadersInit = {};
         const token = localStorage.getItem('auth_token');
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
+        if (token) headers['Authorization'] = `Bearer ${token}`;
         return headers;
+    }
+
+    private getJsonHeaders(): HeadersInit {
+        return {
+            'Content-Type': 'application/json',
+            ...this.getAuthHeader(),
+        };
     }
 
     // Generic request wrapper that aligns with the generated contract would be complex in TS without strict mode
@@ -39,7 +42,7 @@ export class RealDataClient implements IDataClient {
     private async request<T>(method: string, endpoint: string, body?: any): Promise<T> {
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
             method,
-            headers: this.getHeaders(),
+            headers: this.getJsonHeaders(),
             body: body ? JSON.stringify(body) : undefined,
         });
 
@@ -91,7 +94,35 @@ export class RealDataClient implements IDataClient {
             status: (res as any).status as any,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            metadata: { source: 'json' }
+            metadata: { source: 'json' },
+        } as any;
+    }
+
+    async uploadVotersFile(file: File): Promise<Job> {
+        const form = new FormData();
+        form.append('file', file);
+
+        const response = await fetch(`${this.baseUrl}/imports/voters`, {
+            method: 'POST',
+            headers: this.getAuthHeader(),
+            body: form,
+        });
+
+        if (!response.ok) {
+            const txt = await response.text();
+            throw new Error(`API Error ${response.status}: ${txt}`);
+        }
+
+        const data = await response.json();
+        return {
+            id: data.id,
+            org_id: '',
+            user_id: '',
+            type: 'import_voters',
+            status: data.status,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            metadata: { source: 'file', filename: file.name, size: file.size },
         } as any;
     }
 
