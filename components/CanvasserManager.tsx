@@ -7,20 +7,28 @@ const CanvasserManager: React.FC = () => {
     const context = useContext(AppContext);
     const [showModal, setShowModal] = useState(false);
     const [newCanvasser, setNewCanvasser] = useState({ name: '', email: '', phone: '' });
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     if (!context) return null;
     const { canvassers, client, refreshData } = context;
 
     const handleAddCanvasser = async () => {
-        if (newCanvasser.name && newCanvasser.email) {
-            try {
-                await client.addCanvasser(newCanvasser);
-                await refreshData();
-                setShowModal(false);
-                setNewCanvasser({ name: '', email: '', phone: '' });
-            } catch (e) {
-                alert("Failed to add user");
-            }
+        setError(null);
+        if (!newCanvasser.name || !newCanvasser.email) {
+            setError('Name and email are required.');
+            return;
+        }
+        setSaving(true);
+        try {
+            await client.addCanvasser(newCanvasser);
+            await refreshData();
+            setShowModal(false);
+            setNewCanvasser({ name: '', email: '', phone: '' });
+        } catch (e: any) {
+            setError(e?.message || 'Failed to add user');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -67,14 +75,21 @@ const CanvasserManager: React.FC = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
                     <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
                         <h2 className="text-2xl font-bold mb-4">Add New Canvasser</h2>
+
+                        {error && (
+                            <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-2">
+                                {error}
+                            </div>
+                        )}
+
                         <div className="space-y-4">
                             <input type="text" placeholder="Name" value={newCanvasser.name} onChange={e => setNewCanvasser({...newCanvasser, name: e.target.value})} className="w-full p-2 border rounded" />
                             <input type="email" placeholder="Email" value={newCanvasser.email} onChange={e => setNewCanvasser({...newCanvasser, email: e.target.value})} className="w-full p-2 border rounded" />
                             <input type="tel" placeholder="Phone" value={newCanvasser.phone} onChange={e => setNewCanvasser({...newCanvasser, phone: e.target.value})} className="w-full p-2 border rounded" />
                         </div>
                         <div className="mt-6 flex justify-end space-x-4">
-                            <button onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
-                            <button onClick={handleAddCanvasser} className="px-4 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                            <button onClick={() => { setError(null); setShowModal(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                            <button disabled={saving} onClick={handleAddCanvasser} className="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-60">{saving ? 'Saving…' : 'Save'}</button>
                         </div>
                     </div>
                 </div>

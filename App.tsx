@@ -43,8 +43,21 @@ const App: React.FC = () => {
             setWalkLists(w);
             setAssignments(a);
             setInteractions(i);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to fetch data", error);
+
+            // If token expired / missing, drop to login screen.
+            const msg = String(error?.message || '');
+            if (msg.toLowerCase().includes('unauthorized')) {
+                localStorage.removeItem('auth_token');
+                setCurrentUser(null);
+                setCurrentOrg(null);
+                setVoters([]);
+                setCanvassers([]);
+                setWalkLists([]);
+                setAssignments([]);
+                setInteractions([]);
+            }
         } finally {
             setLoading(false);
         }

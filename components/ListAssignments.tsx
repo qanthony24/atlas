@@ -4,18 +4,20 @@ import { AppContext } from './AppContext';
 
 const ListAssignments: React.FC = () => {
     const context = useContext(AppContext);
+    const [error, setError] = React.useState<string | null>(null);
 
     if (!context) return null;
     const { walkLists, canvassers, assignments, client, refreshData } = context;
 
     const handleAssign = async (listId: string, canvasserId: string) => {
+        setError(null);
         if (!canvasserId) return;
         try {
             await client.assignList(listId, canvasserId);
             await refreshData();
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert("Failed to assign list");
+            setError(e?.message || "Failed to assign list");
         }
     };
 
@@ -28,6 +30,12 @@ const ListAssignments: React.FC = () => {
         <div>
             <h1 className="text-3xl font-semibold text-gray-800">List Assignments</h1>
             <p className="mt-2 text-gray-600">Assign walk lists to your canvassers.</p>
+
+            {error && (
+                <div className="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
+                    {error}
+                </div>
+            )}
             
             <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
                 <div className="overflow-x-auto">
