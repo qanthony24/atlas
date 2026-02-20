@@ -41,7 +41,8 @@ export class RealDataClient implements IDataClient {
     // For this implementation, we manually align the return types to the domain types, relying on the fact
     // that the contract types (components['schemas']) exactly match the domain types (types.ts).
     private async request<T>(method: string, endpoint: string, body?: any): Promise<T> {
-        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        const url = `${this.baseUrl}${endpoint}`;
+        const response = await fetch(url, {
             method,
             headers: this.getJsonHeaders(),
             body: body ? JSON.stringify(body) : undefined,
@@ -53,7 +54,7 @@ export class RealDataClient implements IDataClient {
                 throw new Error("Unauthorized");
             }
             const errorText = await response.text();
-            throw new Error(`API Error ${response.status}: ${errorText}`);
+            throw new Error(`API Error ${response.status} (${method} ${url}): ${errorText}`);
         }
 
         const text = await response.text();
@@ -104,7 +105,8 @@ export class RealDataClient implements IDataClient {
         const form = new FormData();
         form.append('file', file);
 
-        const response = await fetch(`${this.baseUrl}/imports/voters`, {
+        const url = `${this.baseUrl}/imports/voters`;
+        const response = await fetch(url, {
             method: 'POST',
             headers: this.getAuthHeader(),
             body: form,
@@ -112,7 +114,7 @@ export class RealDataClient implements IDataClient {
 
         if (!response.ok) {
             const txt = await response.text();
-            throw new Error(`API Error ${response.status}: ${txt}`);
+            throw new Error(`API Error ${response.status} (POST ${url}): ${txt}`);
         }
 
         const data = await response.json();

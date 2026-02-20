@@ -12,8 +12,8 @@ export function getApiOrigin(): string {
   // Production fallback for atlaswins.org deployments.
   // Prefer setting VITE_API_BASE_URL in hosting env, but this keeps prod usable.
   if (typeof window !== 'undefined') {
-    const host = window.location?.hostname || '';
-    if (host.endsWith('atlaswins.org')) {
+    const host = String(window.location?.hostname || '').toLowerCase();
+    if (host.includes('atlaswins.org')) {
       return 'https://atlasbackendapi-production.up.railway.app';
     }
   }
