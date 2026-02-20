@@ -71,8 +71,9 @@ export class RealDataClient implements IDataClient {
         return ctx.org as any;
     }
 
-    async switchRole(role: UserRole): Promise<void> {
-        await this.request<void>('POST', '/auth/switch-role', { role });
+    async switchRole(_role: UserRole): Promise<void> {
+        // This was a MockData convenience. In real mode we don't support role switching without re-auth.
+        throw new Error('Role switching is not supported in Real API mode. Please log in as the other user.');
     }
 
     // --- Voter Management ---
