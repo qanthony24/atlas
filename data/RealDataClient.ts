@@ -5,6 +5,7 @@ import {
     Assignment, InteractionCreate, Interaction, Job 
 } from '../types';
 import { components, paths } from './contract';
+import { getApiOrigin } from '../utils/apiOrigin';
 
 // Helper types to extract response bodies from the contract
 type PathResponse<T extends keyof paths, M extends keyof paths[T]> = 
@@ -19,7 +20,7 @@ type PathResponse<T extends keyof paths, M extends keyof paths[T]> =
 export class RealDataClient implements IDataClient {
     // In production the frontend (Vercel) and backend (Railway) are different domains.
     // Configure the API origin via Vite env var (must start with VITE_).
-    private apiOrigin = (import.meta as any).env?.VITE_API_BASE_URL || '';
+    private apiOrigin = getApiOrigin();
     private baseUrl = `${String(this.apiOrigin).replace(/\/$/, '')}/api/v1`;
 
     private getAuthHeader(): HeadersInit {

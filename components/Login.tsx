@@ -1,5 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { AppContext } from './AppContext';
+import { getApiOrigin } from '../utils/apiOrigin';
 
 const Login: React.FC = () => {
   const context = useContext(AppContext);
@@ -17,8 +18,9 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       // RealDataClient exposes no explicit login method; call backend directly here.
-      const apiBase = (import.meta as any).env?.VITE_API_BASE_URL || '';
-      const base = String(apiBase).replace(/\/$/, '');
+      const base = getApiOrigin();
+      if (!base) throw new Error('API base URL is not configured. Set VITE_API_BASE_URL.');
+
       const res = await fetch(`${base}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,7 +82,7 @@ const Login: React.FC = () => {
           </button>
 
           <div className="text-[11px] text-gray-500">
-            Using API: <code className="break-all">{String((import.meta as any).env?.VITE_API_BASE_URL || '') || '(not set)'}</code>
+            Using API: <code className="break-all">{getApiOrigin() || '(not set)'}</code>
           </div>
         </form>
       </div>
