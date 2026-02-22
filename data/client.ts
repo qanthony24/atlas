@@ -94,6 +94,15 @@ export interface IDataClient {
     // --- Admin data integrity workflows ---
     /** Returns open merge-alert count (manual review required). */
     getMergeAlertCount?(): Promise<{ open_count: number }>;
+
+    /** Returns merge alerts for admin review. */
+    getMergeAlerts?(status?: 'open' | 'resolved' | 'dismissed'): Promise<any>;
+
+    /** Update merge alert status. */
+    updateMergeAlert?(alertId: string, status: 'open' | 'resolved' | 'dismissed'): Promise<void>;
+
+    /** Merge a manual lead into an imported voter (explicit admin action). */
+    mergeLeadIntoVoter?(leadVoterId: string, importedVoterId: string): Promise<any>;
 }
 
 export class MockDataClient implements IDataClient {

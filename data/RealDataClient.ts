@@ -208,4 +208,16 @@ export class RealDataClient implements IDataClient {
     async getMergeAlertCount(): Promise<{ open_count: number }> {
         return this.request<{ open_count: number }>('GET', `/merge-alerts/count`);
     }
+
+    async getMergeAlerts(status: 'open' | 'resolved' | 'dismissed' = 'open'): Promise<any> {
+        return this.request<any>('GET', `/merge-alerts?status=${encodeURIComponent(status)}`);
+    }
+
+    async updateMergeAlert(alertId: string, status: 'open' | 'resolved' | 'dismissed'): Promise<void> {
+        await this.request<void>('PATCH', `/merge-alerts/${encodeURIComponent(alertId)}`, { status });
+    }
+
+    async mergeLeadIntoVoter(leadVoterId: string, importedVoterId: string): Promise<any> {
+        return this.request<any>('POST', `/voters/${encodeURIComponent(leadVoterId)}/merge-into/${encodeURIComponent(importedVoterId)}`);
+    }
 }

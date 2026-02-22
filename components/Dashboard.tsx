@@ -162,7 +162,8 @@ const Dashboard: React.FC = () => {
                 <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-md">
                     <div className="text-sm text-amber-900">
                         <span className="font-bold">Data to review:</span> {mergeAlertCount} potential lead matches found.
-                        <span className="ml-2 text-amber-800">These are people added manually who likely match voters from your imported file. Review and merge to keep canvassing history clean.</span>
+                        <span className="ml-2 text-amber-800">These are people added manually who likely match voters from your imported file.</span>
+                        <Link to="/voters?tab=merge" className="ml-2 text-indigo-700 font-semibold hover:underline">Review in Voter Universe →</Link>
                     </div>
                 </div>
             )}
