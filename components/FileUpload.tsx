@@ -125,8 +125,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose, onComplete }) => {
     processedHistoryRef.current = [];
 
     try {
-      const job = await context.client.uploadVotersFile(file);
+      const job: any = await context.client.uploadVotersFile(file);
       setJobId(job.id);
+
+      if (job?.duplicate_of_job_id) {
+        setError('Heads up: this looks like the same file you uploaded before. Re-importing will update voter records but won’t duplicate canvassing interactions.');
+      }
+
       void pollJob(job.id);
     } catch (e: any) {
       clearPollTimer();
