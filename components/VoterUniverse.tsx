@@ -13,14 +13,16 @@ const VoterUniverse: React.FC = () => {
     const [showAddVoter, setShowAddVoter] = useState(false);
     const [selectedVoter, setSelectedVoter] = useState<Voter | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [voterFilter, setVoterFilter] = useState<'all' | 'registered' | 'leads'>('all');
     
     if (!context) return null;
     const { voters, refreshData } = context;
 
-    const filteredVoters = voters.filter(voter => 
-        `${voter.firstName} ${voter.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        voter.address.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredVoters = voters.filter(voter => {
+        const name = `${voter.firstName} ${voter.lastName}`.toLowerCase();
+        const addr = String(voter.address || '').toLowerCase();
+        return name.includes(searchTerm.toLowerCase()) || addr.includes(searchTerm.toLowerCase());
+    });
 
     const handleImportComplete = async () => {
         await refreshData();

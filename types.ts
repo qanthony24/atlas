@@ -37,7 +37,14 @@ export interface User {
 export interface Voter {
     id: string; // UUID
     orgId: string;
-    externalId: string; // e.g., REG_NUMBER
+
+    // For imported/registered voters this is the registration number.
+    // For manual leads it may be missing.
+    externalId?: string;
+
+    // Record provenance
+    source?: 'import' | 'manual';
+    mergedIntoVoterId?: string;
     
     // Demographics
     firstName: string;
