@@ -1,5 +1,5 @@
 
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from './AppContext';
 import { ChartBarIcon, DocumentTextIcon, UserGroupIcon, CheckCircleIcon, TrophyIcon, RocketLaunchIcon } from '@heroicons/react/24/solid';
 import { Link } from 'react-router-dom';
@@ -22,6 +22,26 @@ const Dashboard: React.FC = () => {
     if (!context || !context.currentUser) return null;
 
     const { voters, walkLists, canvassers, interactions, assignments, currentUser } = context;
+
+    const [mergeAlertCount, setMergeAlertCount] = useState<number | null>(null);
+
+    useEffect(() => {
+        // Admin-only: show a notice when manual leads likely match imported voters.
+        if (currentUser.role !== 'admin') return;
+        let cancelled = false;
+
+        (async () => {
+            try {
+                if (typeof (context.client as any).getMergeAlertCount !== 'function') return;
+                const res = await (context.client as any).getMergeAlertCount();
+                if (!cancelled) setMergeAlertCount(Number(res?.open_count ?? 0));
+            } catch {
+                if (!cancelled) setMergeAlertCount(null);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [context.client, currentUser.role]);
     
     // Logic for Admin
     const globalCanvassedCount = interactions.filter(i => i.result_code === 'contacted').length;
@@ -137,6 +157,15 @@ const Dashboard: React.FC = () => {
         <div>
             <h1 className="text-3xl font-bold text-gray-800">Campaign Overview</h1>
             <p className="mt-2 text-gray-600">Welcome, Administrator! Real-time operation stats across all regions.</p>
+
+            {mergeAlertCount !== null && mergeAlertCount > 0 && (
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-md">
+                    <div className="text-sm text-amber-900">
+                        <span className="font-bold">Data to review:</span> {mergeAlertCount} potential lead matches found.
+                        <span className="ml-2 text-amber-800">These are people added manually who likely match voters from your imported file. Review and merge to keep canvassing history clean.</span>
+                    </div>
+                </div>
+            )}
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Total Voters" value={voters.length} icon={<UserGroupIcon className="h-8 w-8" />} />

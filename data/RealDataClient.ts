@@ -204,4 +204,8 @@ export class RealDataClient implements IDataClient {
     async getJob(jobId: string): Promise<Job> {
         return this.request<components['schemas']['Job']>('GET', `/jobs/${jobId}`);
     }
+
+    async getMergeAlertCount(): Promise<{ open_count: number }> {
+        return this.request<{ open_count: number }>('GET', `/merge-alerts/count`);
+    }
 }

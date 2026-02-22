@@ -90,6 +90,10 @@ export interface IDataClient {
     // --- Platform Infrastructure ---
     /** Polling endpoint for Async Job status. */
     getJob(jobId: string): Promise<Job>;
+
+    // --- Admin data integrity workflows ---
+    /** Returns open merge-alert count (manual review required). */
+    getMergeAlertCount?(): Promise<{ open_count: number }>;
 }
 
 export class MockDataClient implements IDataClient {
