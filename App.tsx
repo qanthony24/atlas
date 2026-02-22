@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
@@ -135,6 +136,7 @@ const App: React.FC = () => {
                         </div>
                     </main>
                 </div>
+                <Analytics />
             </HashRouter>
         </AppContext.Provider>
     );
