@@ -466,8 +466,12 @@ export class MockDataClient implements IDataClient {
 
 // Environment Variable Switch
 // In Vite, env vars are accessed via import.meta.env.VITE_*
-// We default to MOCK if the variable is not explicitly set to 'true'
-const useRealApi = (import.meta as any).env?.VITE_USE_REAL_API === 'true';
+// Phase 2 hardening rule: production MUST default to RealDataClient.
+// Mock is allowed only when explicitly opted-in (local/dev).
+const env = (import.meta as any).env || {};
+const isProd = !!env.PROD;
+const forceMock = env.VITE_USE_MOCK_API === 'true';
+const useRealApi = isProd ? !forceMock : env.VITE_USE_REAL_API === 'true';
 
 // Singleton for the app
 export const client = useRealApi ? new RealDataClient() : new MockDataClient();
