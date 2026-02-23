@@ -52,11 +52,14 @@ const Sidebar: React.FC = () => {
             });
             if (!res.ok) {
                 const txt = await res.text();
-                throw new Error(txt || `Impersonation failed (${res.status})`);
+                window.alert(txt || `Impersonation failed (${res.status})`);
+                return;
             }
             const data = await res.json();
             localStorage.setItem('auth_token', data.token);
             await refreshData();
+            // Force route tree to re-evaluate based on new user.role
+            window.location.reload();
             return;
         }
 
