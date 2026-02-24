@@ -15,6 +15,8 @@ const TableShell = ({ children }: { children: React.ReactNode }) => (
     </div>
 );
 
+const BigIcon = (IconCmp: any) => <IconCmp style={{ width: 28, height: 28 }} />;
+
 
 const Dashboard: React.FC = () => {
     const context = useContext(AppContext);
@@ -73,10 +75,10 @@ const Dashboard: React.FC = () => {
                 />
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-                    <StatBlock label="Assigned Lists" value={myAssignedLists.length} icon={<DocumentTextIcon className="atlas-nav-icon" />} />
-                    <StatBlock label="Doors Knocked" value={myInteractions.length} icon={<ChartBarIcon className="atlas-nav-icon" />} />
-                    <StatBlock label="Successful IDs" value={myCanvassedCount} icon={<CheckCircleIcon className="atlas-nav-icon" />} />
-                    <StatBlock label="Progress" value={`${myCompletionPercentage}%`} icon={<CheckCircleIcon className="atlas-nav-icon" />} />
+                    <StatBlock label="Assigned Lists" value={myAssignedLists.length} icon={BigIcon(DocumentTextIcon)} />
+                    <StatBlock label="Doors Knocked" value={myInteractions.length} icon={BigIcon(ChartBarIcon)} />
+                    <StatBlock label="Successful IDs" value={myCanvassedCount} icon={BigIcon(CheckCircleIcon)} />
+                    <StatBlock label="Progress" value={`${myCompletionPercentage}%`} icon={BigIcon(CheckCircleIcon)} />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16, marginTop: 16 }}>
@@ -151,10 +153,10 @@ const Dashboard: React.FC = () => {
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-                <StatBlock label="Total Voters" value={voters.length} icon={<UserGroupIcon className="atlas-nav-icon" />} />
-                <StatBlock label="Active Walk Lists" value={walkLists.length} icon={<DocumentTextIcon className="atlas-nav-icon" />} />
-                <StatBlock label="Doors Knocked" value={interactions.length} icon={<ChartBarIcon className="atlas-nav-icon" />} />
-                <StatBlock label="Total Progress" value={`${globalCompletionPercentage}%`} icon={<CheckCircleIcon className="atlas-nav-icon" />} />
+                <StatBlock label="Total Voters" value={voters.length} icon={BigIcon(UserGroupIcon)} />
+                <StatBlock label="Active Walk Lists" value={walkLists.length} icon={BigIcon(DocumentTextIcon)} />
+                <StatBlock label="Doors Knocked" value={interactions.length} icon={BigIcon(ChartBarIcon)} />
+                <StatBlock label="Total Progress" value={`${globalCompletionPercentage}%`} icon={BigIcon(CheckCircleIcon)} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 16, marginTop: 16 }}>

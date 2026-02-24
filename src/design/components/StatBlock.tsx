@@ -11,12 +11,12 @@ export function StatBlock({
   icon?: React.ReactNode;
 }) {
   return (
-    <Card style={{ padding: 12, minWidth: 160, display: 'flex', alignItems: 'center', gap: 10 }}>
+    <Card style={{ padding: 16, minWidth: 180, display: 'flex', alignItems: 'center', gap: 14 }}>
       {icon ? (
         <div
           style={{
-            width: 28,
-            height: 28,
+            width: 44,
+            height: 44,
             display: 'grid',
             placeItems: 'center',
             border: '1px solid var(--color-border)',
@@ -26,14 +26,14 @@ export function StatBlock({
             flex: '0 0 auto',
           }}
         >
-          {icon}
+          <div style={{ width: 28, height: 28, display: 'grid', placeItems: 'center' }}>{icon}</div>
         </div>
       ) : null}
       <div>
-        <div className="atlas-label" style={{ marginBottom: 6 }}>
+        <div className="atlas-label" style={{ marginBottom: 6, fontSize: 13 }}>
           {label}
         </div>
-        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22 }}>{value}</div>
+        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 30 }}>{value}</div>
       </div>
     </Card>
   );
