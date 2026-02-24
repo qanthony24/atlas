@@ -251,7 +251,7 @@ body {
 }
 
 .atlas-auth-logo {
-  height: 44px;
+  height: 160px; /* per founder: ~3-4x larger */
   width: auto;
 }
 

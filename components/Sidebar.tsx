@@ -137,7 +137,7 @@ const Sidebar: React.FC = () => {
                         <div className="atlas-sidebar-user-email">{currentUser.email}</div>
                     </div>
                     <div className="atlas-sidebar-logout">
-                        <button className="atlas-btn atlas-btn-secondary" onClick={handleLogout} title="Log out">
+                        <button className="atlas-btn atlas-btn-secondary atlas-btn-secondary--dark" onClick={handleLogout} title="Log out">
                             Log out
                         </button>
                     </div>
