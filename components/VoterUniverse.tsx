@@ -7,6 +7,9 @@ import FileUpload from './FileUpload';
 import VoterDetailModal from './VoterDetailModal';
 import AddVoterModal from './AddVoterModal';
 import { PlusIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
+import { PageHeader } from '../src/design/components/PageHeader';
+import { Button } from '../src/design/components/Button';
+import { Card } from '../src/design/components/Card';
 
 const VoterUniverse: React.FC = () => {
     const context = useContext(AppContext);
@@ -80,144 +83,127 @@ const VoterUniverse: React.FC = () => {
         setShowAddVoter(false);
     };
 
+    const actions = (
+        <div style={{ display: 'flex', gap: 10 }}>
+            <Button variant="secondary" onClick={() => setShowAddVoter(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <PlusIcon style={{ width: 22, height: 22 }} />
+                Add Lead
+            </Button>
+            <Button variant="primary" onClick={() => setShowImporter(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <ArrowUpTrayIcon style={{ width: 22, height: 22 }} />
+                Import CSV
+            </Button>
+        </div>
+    );
+
     return (
         <div>
-            <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
-                <div>
-                    <h1 className="text-3xl font-semibold text-gray-800">Voter Universe</h1>
-                    {currentUser?.role === 'admin' && (
-                        <div className="mt-3 inline-flex rounded-md border border-gray-200 bg-white shadow-sm overflow-hidden">
-                            <button
-                                onClick={() => setActiveTab('voters')}
-                                className={`px-3 py-1.5 text-sm font-semibold ${activeTab === 'voters' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                            >
-                                Voters
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('merge')}
-                                className={`px-3 py-1.5 text-sm font-semibold ${activeTab === 'merge' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                            >
-                                Review Matches
-                            </button>
-                        </div>
-                    )}
-                </div>
-                <div className="flex space-x-3">
-                    <button 
-                        onClick={() => setShowAddVoter(true)}
-                        className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 font-medium"
+            <PageHeader title="Voter Universe" right={actions} />
+
+            {currentUser?.role === 'admin' && (
+                <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                        onClick={() => setActiveTab('voters')}
+                        className={['atlas-btn', activeTab === 'voters' ? 'atlas-btn-primary' : 'atlas-btn-secondary'].join(' ')}
                     >
-                        <PlusIcon className="h-5 w-5 mr-2 text-gray-500" />
-                        Add Lead
+                        Voters
                     </button>
-                    <button 
-                        onClick={() => setShowImporter(true)}
-                        className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 font-medium shadow-sm"
+                    <button
+                        onClick={() => setActiveTab('merge')}
+                        className={['atlas-btn', activeTab === 'merge' ? 'atlas-btn-primary' : 'atlas-btn-secondary'].join(' ')}
                     >
-                        <ArrowUpTrayIcon className="h-5 w-5 mr-2" />
-                        Import CSV
+                        Review Matches
                     </button>
                 </div>
-            </div>
+            )}
 
             {showImporter && <FileUpload onClose={() => setShowImporter(false)} onComplete={handleImportComplete} />}
             {showAddVoter && <AddVoterModal onClose={() => setShowAddVoter(false)} onSuccess={handleAddComplete} />}
             {selectedVoter && <VoterDetailModal voter={selectedVoter} onClose={() => setSelectedVoter(null)} />}
             
-            <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
+            <Card style={{ padding: 16 }}>
                 {activeTab === 'voters' ? (
                     <>
-                        <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                            <input 
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                            <input
                                 type="text"
                                 placeholder="Search by name or address..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full md:max-w-md p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+                                className="atlas-input"
+                                style={{ maxWidth: 520 }}
                             />
 
-                            <div className="inline-flex rounded-md border border-gray-200 bg-white shadow-sm overflow-hidden">
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                 <button
                                     onClick={() => setVoterFilter('all')}
-                                    className={`px-3 py-1.5 text-sm font-semibold ${voterFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                                >
-                                    All
-                                </button>
+                                    className={['atlas-btn', voterFilter === 'all' ? 'atlas-btn-primary' : 'atlas-btn-secondary'].join(' ')}
+                                >All</button>
                                 <button
                                     onClick={() => setVoterFilter('registered')}
-                                    className={`px-3 py-1.5 text-sm font-semibold ${voterFilter === 'registered' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                                >
-                                    Registered
-                                </button>
+                                    className={['atlas-btn', voterFilter === 'registered' ? 'atlas-btn-primary' : 'atlas-btn-secondary'].join(' ')}
+                                >Registered</button>
                                 <button
                                     onClick={() => setVoterFilter('leads')}
-                                    className={`px-3 py-1.5 text-sm font-semibold ${voterFilter === 'leads' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                                >
-                                    Leads
-                                </button>
+                                    className={['atlas-btn', voterFilter === 'leads' ? 'atlas-btn-primary' : 'atlas-btn-secondary'].join(' ')}
+                                >Leads</button>
                             </div>
                         </div>
-                        <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Demographics</th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Party</th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredVoters.map((voter) => (
-                          <tr 
-                            key={voter.id} 
-                            onClick={() => setSelectedVoter(voter)}
-                            className="hover:bg-indigo-50 cursor-pointer transition-colors"
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-medium text-gray-900">{voter.firstName} {voter.middleName} {voter.lastName} {voter.suffix}</div>
-                                <div className="text-xs text-gray-400 flex items-center gap-2">
-                                    {voter.source === 'manual' ? (
-                                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase">Lead</span>
-                                    ) : (
-                                        <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold uppercase">Registered</span>
-                                    )}
-                                    <span>{voter.externalId ? `Reg #: ${voter.externalId}` : 'No registration # yet'}</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {voter.age && <span className="mr-2">{voter.age}yo</span>}
-                                {voter.gender && <span className="mr-2">{voter.gender}</span>}
-                                {voter.race && <span className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">{voter.race}</span>}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <div>{voter.address} {voter.unit}</div>
-                                <div className="text-xs text-gray-400">{voter.city}, {voter.state} {voter.zip}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                    voter.party === 'Democrat' ? 'bg-blue-100 text-blue-800' :
-                                    voter.party === 'Republican' ? 'bg-red-100 text-red-800' :
-                                    'bg-gray-100 text-gray-800'
-                                }`}>
-                                    {voter.party}
-                                </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                    voter.lastInteractionStatus === 'contacted' ? 'bg-green-100 text-green-800' :
-                                    voter.lastInteractionStatus === 'not_home' ? 'bg-yellow-100 text-yellow-800' :
-                                    voter.lastInteractionStatus === 'refused' ? 'bg-red-100 text-red-800' :
-                                    'bg-gray-100 text-gray-800'
-                                }`}>
-                                    {voter.lastInteractionStatus ? voter.lastInteractionStatus.replace('_', ' ') : 'Pending'}
-                                </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+
+                        <div style={{ overflowX: 'auto' }}>
+                            <div className="atlas-card" style={{ overflow: 'hidden' }}>
+                                <table className="atlas-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Demographics</th>
+                                            <th>Address</th>
+                                            <th>Party</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredVoters.map((voter) => (
+                                            <tr
+                                                key={voter.id}
+                                                onClick={() => setSelectedVoter(voter)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <td>
+                                                    <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>
+                                                        {voter.firstName} {voter.middleName} {voter.lastName} {voter.suffix}
+                                                    </div>
+                                                    <div className="atlas-help" style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                                                        {voter.source === 'manual' ? (
+                                                            <span className="atlas-chip atlas-chip--lead">Lead</span>
+                                                        ) : (
+                                                            <span className="atlas-chip atlas-chip--registered">Registered</span>
+                                                        )}
+                                                        <span className="atlas-mono">{voter.externalId ? `Reg #: ${voter.externalId}` : 'No registration # yet'}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="atlas-help" style={{ fontSize: 13 }}>
+                                                        {voter.age ? <span style={{ marginRight: 8 }}>{voter.age}yo</span> : null}
+                                                        {voter.gender ? <span style={{ marginRight: 8 }}>{voter.gender}</span> : null}
+                                                        {voter.race ? <span className="atlas-chip">{voter.race}</span> : null}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontSize: 14 }}>{voter.address} {voter.unit}</div>
+                                                    <div className="atlas-help">{voter.city}, {voter.state} {voter.zip}</div>
+                                                </td>
+                                                <td>
+                                                    <span className="atlas-chip">{voter.party || '—'}</span>
+                                                </td>
+                                                <td>
+                                                    <span className="atlas-chip">{voter.lastInteractionStatus ? voter.lastInteractionStatus.replace('_', ' ') : 'Pending'}</span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </>
                 ) : (
@@ -315,7 +301,7 @@ const VoterUniverse: React.FC = () => {
                         )}
                     </div>
                 )}
-            </div>
+            </Card>
         </div>
     );
 };
