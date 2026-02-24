@@ -2,6 +2,9 @@
 import React, { useState, useContext } from 'react';
 import { AppContext } from './AppContext';
 import { User } from '../types';
+import { PageHeader } from '../src/design/components/PageHeader';
+import { Button } from '../src/design/components/Button';
+import { Card } from '../src/design/components/Card';
 
 const CanvasserManager: React.FC = () => {
     const context = useContext(AppContext);
@@ -34,62 +37,66 @@ const CanvasserManager: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-semibold text-gray-800">Canvasser Management</h1>
-                <button 
-                    onClick={() => setShowModal(true)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                >
-                    Add Canvasser
-                </button>
-            </div>
-            
-            <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {canvassers.map(canvasser => (
-                          <tr key={canvasser.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{canvasser.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{canvasser.email}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{canvasser.phone}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <a href="#" className="text-indigo-600 hover:text-indigo-900">Edit</a>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            <PageHeader
+                title="Canvasser Management"
+                right={
+                    <Button variant="primary" onClick={() => setShowModal(true)}>
+                        Add Canvasser
+                    </Button>
+                }
+            />
+
+            <Card style={{ padding: 16 }}>
+                <div style={{ overflowX: 'auto' }}>
+                    <div className="atlas-card" style={{ overflow: 'hidden' }}>
+                        <table className="atlas-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {canvassers.map(canvasser => (
+                                    <tr key={canvasser.id}>
+                                        <td style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>{canvasser.name}</td>
+                                        <td className="atlas-mono" style={{ opacity: 0.85 }}>{canvasser.email}</td>
+                                        <td className="atlas-mono" style={{ opacity: 0.85 }}>{canvasser.phone || '—'}</td>
+                                        <td style={{ textAlign: 'right' }}>
+                                            <Button variant="secondary" disabled>
+                                                Edit
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            </Card>
 
             {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-                    <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-                        <h2 className="text-2xl font-bold mb-4">Add New Canvasser</h2>
+                <div className="fixed inset-0" style={{ background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 50 }}>
+                    <div className="atlas-card atlas-auth-card--blueprint" style={{ width: '100%', maxWidth: 520, padding: 16 }}>
+                        <div className="atlas-h1" style={{ fontSize: 22, marginBottom: 12, color: 'rgba(255,255,255,0.92)' }}>Add New Canvasser</div>
 
-                        {error && (
-                            <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-2">
-                                {error}
-                            </div>
-                        )}
+                        {error ? <div className="atlas-error" style={{ marginBottom: 12 }}>{error}</div> : null}
 
-                        <div className="space-y-4">
-                            <input type="text" placeholder="Name" value={newCanvasser.name} onChange={e => setNewCanvasser({...newCanvasser, name: e.target.value})} className="w-full p-2 border rounded" />
-                            <input type="email" placeholder="Email" value={newCanvasser.email} onChange={e => setNewCanvasser({...newCanvasser, email: e.target.value})} className="w-full p-2 border rounded" />
-                            <input type="tel" placeholder="Phone" value={newCanvasser.phone} onChange={e => setNewCanvasser({...newCanvasser, phone: e.target.value})} className="w-full p-2 border rounded" />
+                        <div style={{ display: 'grid', gap: 12 }}>
+                            <input type="text" placeholder="Name" value={newCanvasser.name} onChange={e => setNewCanvasser({ ...newCanvasser, name: e.target.value })} className="atlas-input atlas-input--dark" />
+                            <input type="email" placeholder="Email" value={newCanvasser.email} onChange={e => setNewCanvasser({ ...newCanvasser, email: e.target.value })} className="atlas-input atlas-input--dark" />
+                            <input type="tel" placeholder="Phone" value={newCanvasser.phone} onChange={e => setNewCanvasser({ ...newCanvasser, phone: e.target.value })} className="atlas-input atlas-input--dark" />
                         </div>
-                        <div className="mt-6 flex justify-end space-x-4">
-                            <button onClick={() => { setError(null); setShowModal(false); }} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
-                            <button disabled={saving} onClick={handleAddCanvasser} className="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-60">{saving ? 'Saving…' : 'Save'}</button>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+                            <Button variant="secondary" className="atlas-btn-secondary--dark" onClick={() => { setError(null); setShowModal(false); }}>
+                                Cancel
+                            </Button>
+                            <Button variant="primary" disabled={saving} onClick={handleAddCanvasser}>
+                                {saving ? 'Saving…' : 'Save'}
+                            </Button>
                         </div>
                     </div>
                 </div>
