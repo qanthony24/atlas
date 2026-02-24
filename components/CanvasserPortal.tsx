@@ -1,337 +1,460 @@
-
 import React, { useState, useContext, useMemo, useEffect, useRef } from 'react';
 import { AppContext } from './AppContext';
 import { Voter, InteractionResultCode, InteractionCreate } from '../types';
-import { MapIcon, ListBulletIcon, CheckCircleIcon, XCircleIcon, ClockIcon, NoSymbolIcon, PencilSquareIcon, ChevronRightIcon, CloudArrowUpIcon, CheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import {
+  MapIcon,
+  ListBulletIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  NoSymbolIcon,
+  PencilSquareIcon,
+  ChevronRightIcon,
+  CloudArrowUpIcon,
+  CheckIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
+import { PageHeader } from '../src/design/components/PageHeader';
+import { Card } from '../src/design/components/Card';
+import { Button } from '../src/design/components/Button';
+import { atlasTokens } from '../src/design/tokens';
 
 declare const google: any;
 
 const CanvasserPortal: React.FC = () => {
-    const context = useContext(AppContext);
-    
-    // Local state
-    const [myAssignments, setMyAssignments] = useState(context?.assignments || []);
-    const [selectedListId, setSelectedListId] = useState<string | null>(null);
-    const [selectedVoterId, setSelectedVoterId] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
-    
-    // Sync UI State
-    const [syncState, setSyncState] = useState<'synced' | 'syncing' | 'error'>('synced');
-    
-    // Map References
-    const mapRef = useRef<HTMLDivElement>(null);
-    const mapInstance = useRef<any>(null);
-    const markersRef = useRef<any[]>([]);
+  const context = useContext(AppContext);
 
-    useEffect(() => {
-        if (context) {
-            context.client.getMyAssignments().then(setMyAssignments);
-        }
-    }, [context]);
+  // Local state
+  const [myAssignments, setMyAssignments] = useState(context?.assignments || []);
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [selectedVoterId, setSelectedVoterId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
-    if (!context || !context.currentUser) return null;
-    const { walkLists, voters, client, refreshData, currentUser, currentOrg, interactions } = context;
+  // Sync UI State
+  const [syncState, setSyncState] = useState<'synced' | 'syncing' | 'error'>('synced');
 
-    const myLists = walkLists.filter(list => 
-        myAssignments.some(a => a.listId === list.id)
-    );
-    
-    const activeList = useMemo(() => 
-        myLists.find(l => l.id === selectedListId)
-    , [myLists, selectedListId]);
+  // Map References
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
 
-    const activeVoters = useMemo(() => {
-        if (!activeList) return [];
-        return voters.filter(v => activeList.voterIds.includes(v.id));
-    }, [voters, activeList]);
+  useEffect(() => {
+    if (context) {
+      context.client.getMyAssignments().then(setMyAssignments);
+    }
+  }, [context]);
 
-    const selectedVoterHistory = useMemo(() => {
-        if (!selectedVoterId) return [];
-        return interactions
-            .filter(i => i.voter_id === selectedVoterId)
-            .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
-    }, [selectedVoterId, interactions]);
+  if (!context || !context.currentUser) return null;
+  const { walkLists, voters, client, refreshData, currentUser, currentOrg, interactions } = context;
 
-    // Initialize/Update Map when viewing active list in map mode
-    useEffect(() => {
-        if (selectedListId && viewMode === 'map' && mapRef.current && typeof google !== 'undefined') {
-            if (!mapInstance.current) {
-                mapInstance.current = new google.maps.Map(mapRef.current, {
-                    center: { lat: 40.7128, lng: -74.0060 },
-                    zoom: 14,
-                    disableDefaultUI: true, // Clean mobile view
-                    zoomControl: true,
-                });
-            }
+  const myLists = walkLists.filter((list) => myAssignments.some((a) => a.listId === list.id));
 
-            // Update Markers
-            markersRef.current.forEach(m => m.setMap(null));
-            markersRef.current = [];
-            const bounds = new google.maps.LatLngBounds();
+  const activeList = useMemo(() => myLists.find((l) => l.id === selectedListId), [myLists, selectedListId]);
 
-            activeVoters.forEach((v, index) => {
-                if (v.geom) {
-                    const status = v.lastInteractionStatus;
-                    const isSelected = selectedVoterId === v.id;
-                    
-                    // Color Logic
-                    let fillColor = "#9CA3AF"; // Gray pending
-                    if (status === 'contacted') fillColor = "#10B981"; // Green
-                    else if (status === 'not_home') fillColor = "#F59E0B"; // Amber
-                    else if (status === 'refused') fillColor = "#EF4444"; // Red
+  const activeVoters = useMemo(() => {
+    if (!activeList) return [];
+    return voters.filter((v) => activeList.voterIds.includes(v.id));
+  }, [voters, activeList]);
 
-                    const marker = new google.maps.Marker({
-                        position: v.geom,
-                        map: mapInstance.current,
-                        label: {
-                            text: (index + 1).toString(),
-                            color: "white",
-                            fontSize: "10px",
-                            fontWeight: "bold"
-                        },
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: isSelected ? 12 : 10,
-                            fillColor: fillColor,
-                            fillOpacity: 1,
-                            strokeWeight: 2,
-                            strokeColor: isSelected ? "#4F46E5" : "#FFFFFF",
-                        }
-                    });
+  const selectedVoter = useMemo(() => {
+    if (!selectedVoterId) return null;
+    return voters.find((v) => v.id === selectedVoterId) || null;
+  }, [selectedVoterId, voters]);
 
-                    marker.addListener('click', () => {
-                        setSelectedVoterId(v.id);
-                        mapInstance.current.panTo(v.geom);
-                    });
+  const selectedVoterHistory = useMemo(() => {
+    if (!selectedVoterId) return [];
+    return interactions
+      .filter((i) => i.voter_id === selectedVoterId)
+      .sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
+  }, [selectedVoterId, interactions]);
 
-                    markersRef.current.push(marker);
-                    bounds.extend(v.geom);
-                }
-            });
+  // Initialize/Update Map when viewing active list in map mode
+  useEffect(() => {
+    if (selectedListId && viewMode === 'map' && mapRef.current && typeof google !== 'undefined') {
+      if (!mapInstance.current) {
+        mapInstance.current = new google.maps.Map(mapRef.current, {
+          center: { lat: 40.7128, lng: -74.006 },
+          zoom: 14,
+          disableDefaultUI: true,
+          zoomControl: true,
+        });
+      }
 
-            if (activeVoters.length > 0) {
-                mapInstance.current.fitBounds(bounds);
-            }
-        }
-    }, [selectedListId, viewMode, activeVoters, selectedVoterId]);
+      // Update Markers
+      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current = [];
+      const bounds = new google.maps.LatLngBounds();
 
+      activeVoters.forEach((v, index) => {
+        if (!v.geom) return;
 
-    const handleRecordInteraction = async (resultCode: InteractionResultCode, supportLevel?: number, notes?: string) => {
-        if (!selectedVoterId || !selectedListId || !currentUser || !currentOrg) return;
+        const status = v.lastInteractionStatus;
+        const isSelected = selectedVoterId === v.id;
 
-        setSyncState('syncing');
+        // Map marker colors mapped to canonical tokens
+        let fillColor = atlasTokens.color.border; // pending / unknown
+        if (status === 'contacted') fillColor = atlasTokens.color.action;
+        else if (status === 'not_home') fillColor = atlasTokens.color.primary;
+        else if (status === 'refused') fillColor = atlasTokens.color.critical;
 
-        const assignment = myAssignments.find(a => a.listId === selectedListId);
+        const marker = new google.maps.Marker({
+          position: v.geom,
+          map: mapInstance.current,
+          label: {
+            text: (index + 1).toString(),
+            color: 'white',
+            fontSize: '10px',
+            fontWeight: 'bold',
+          },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: isSelected ? 12 : 10,
+            fillColor,
+            fillOpacity: 1,
+            strokeWeight: 2,
+            strokeColor: isSelected ? atlasTokens.color.action : '#FFFFFF',
+          },
+        });
 
-        const payload: InteractionCreate = {
-            client_interaction_uuid: crypto.randomUUID(), 
-            org_id: currentOrg.id,
-            voter_id: selectedVoterId,
-            assignment_id: assignment?.id,
-            occurred_at: new Date().toISOString(),
-            channel: 'canvass',
-            result_code: resultCode,
-            notes,
-            survey_responses: supportLevel ? { support_level: supportLevel } : undefined
-        };
+        marker.addListener('click', () => {
+          setSelectedVoterId(v.id);
+          mapInstance.current.panTo(v.geom);
+        });
 
-        try {
-            await client.logInteraction(payload);
-            await refreshData();
-            setSyncState('synced');
-            setSelectedVoterId(null);
-        } catch (e) {
-            console.error("Sync failed", e);
-            setSyncState('error');
-        }
+        markersRef.current.push(marker);
+        bounds.extend(v.geom);
+      });
+
+      if (activeVoters.length > 0) {
+        mapInstance.current.fitBounds(bounds);
+      }
+    }
+  }, [selectedListId, viewMode, activeVoters, selectedVoterId]);
+
+  const handleRecordInteraction = async (resultCode: InteractionResultCode, supportLevel?: number, notes?: string) => {
+    if (!selectedVoterId || !selectedListId || !currentUser || !currentOrg) return;
+
+    setSyncState('syncing');
+
+    const assignment = myAssignments.find((a) => a.listId === selectedListId);
+
+    const payload: InteractionCreate = {
+      client_interaction_uuid: crypto.randomUUID(),
+      org_id: currentOrg.id,
+      voter_id: selectedVoterId,
+      assignment_id: assignment?.id,
+      occurred_at: new Date().toISOString(),
+      channel: 'canvass',
+      result_code: resultCode,
+      notes,
+      survey_responses: supportLevel ? { support_level: supportLevel } : undefined,
     };
 
-    const VoterItem: React.FC<{ voter: Voter, index: number }> = ({ voter, index }) => (
-        <div 
-            onClick={() => setSelectedVoterId(voter.id)}
-            className={`p-4 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors ${selectedVoterId === voter.id ? 'bg-indigo-50 border-l-4 border-l-indigo-500' : ''}`}
-        >
-            <div className="flex-1 flex items-center">
-                 <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center mr-3">
-                    {index + 1}
-                </span>
-                <div>
-                    <div className="flex items-center">
-                        <h3 className="text-sm font-bold text-gray-900">{voter.firstName} {voter.lastName}</h3>
-                        <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            voter.party === 'Democrat' ? 'bg-blue-100 text-blue-700' : 
-                            voter.party === 'Republican' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                            {voter.party ? voter.party[0] : 'U'}
-                        </span>
-                    </div>
-                    <p className="text-xs text-gray-500">{voter.address}</p>
-                </div>
-            </div>
-            <div className="flex items-center space-x-2">
-                {voter.lastInteractionStatus ? (
-                     <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${
-                        voter.lastInteractionStatus === 'contacted' ? 'bg-green-100 text-green-700' :
-                        voter.lastInteractionStatus === 'not_home' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                        {voter.lastInteractionStatus.replace('_', ' ')}
-                    </span>
-                ) : (
-                    <ChevronRightIcon className="h-4 w-4 text-gray-400" />
-                )}
-            </div>
-        </div>
-    );
+    try {
+      await client.logInteraction(payload);
+      await refreshData();
+      setSyncState('synced');
+      setSelectedVoterId(null);
+    } catch (e) {
+      console.error('Sync failed', e);
+      setSyncState('error');
+    }
+  };
+
+  const VoterItem: React.FC<{ voter: Voter; index: number }> = ({ voter, index }) => {
+    const isSelected = selectedVoterId === voter.id;
+    const partyChip =
+      voter.party === 'Democrat'
+        ? 'atlas-chip atlas-chip--party-dem'
+        : voter.party === 'Republican'
+          ? 'atlas-chip atlas-chip--party-rep'
+          : 'atlas-chip';
+
+    const statusChip = voter.lastInteractionStatus
+      ? voter.lastInteractionStatus === 'contacted'
+        ? 'atlas-chip atlas-chip--status-contacted'
+        : voter.lastInteractionStatus === 'not_home'
+          ? 'atlas-chip atlas-chip--status-not-home'
+          : 'atlas-chip atlas-chip--status-refused'
+      : null;
 
     return (
-        <div className="max-w-4xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
-            <div className="mb-6 flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex-shrink-0">
-                <div className="flex items-center space-x-3">
-                    <div className="bg-indigo-600 p-2 rounded-lg text-white">
-                        <MapIcon className="h-6 w-6" />
+      <div
+        onClick={() => setSelectedVoterId(voter.id)}
+        className="atlas-card"
+        style={{
+          padding: 12,
+          cursor: 'pointer',
+          borderColor: isSelected ? 'rgba(0, 163, 224, 0.65)' : undefined,
+          background: isSelected ? 'rgba(0, 163, 224, 0.04)' : undefined,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+          <div className="atlas-chip" style={{ width: 28, justifyContent: 'center' }}>
+            {index + 1}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}>
+                {voter.firstName} {voter.lastName}
+              </div>
+              <span className={partyChip}>{voter.party ? voter.party[0] : 'U'}</span>
+            </div>
+            <div className="atlas-help" style={{ marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {voter.address}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {statusChip ? (
+            <span className={statusChip}>{voter.lastInteractionStatus?.replace('_', ' ')}</span>
+          ) : (
+            <ChevronRightIcon style={{ width: 16, height: 16, opacity: 0.6 }} />
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const syncPill =
+    syncState === 'synced' ? (
+      <span className="atlas-chip atlas-chip--registered" style={{ gap: 6 }}>
+        <CheckIcon style={{ width: 14, height: 14 }} /> Synced
+      </span>
+    ) : syncState === 'syncing' ? (
+      <span className="atlas-chip atlas-chip--party-dem" style={{ gap: 6 }}>
+        <CloudArrowUpIcon style={{ width: 14, height: 14 }} /> Syncing…
+      </span>
+    ) : (
+      <span className="atlas-chip atlas-chip--party-rep" style={{ gap: 6 }}>
+        <ExclamationTriangleIcon style={{ width: 14, height: 14 }} /> Error
+      </span>
+    );
+
+  return (
+    <div style={{ maxWidth: 980, margin: '0 auto', display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 6rem)' }}>
+      <PageHeader
+        title="Field Workspace"
+        right={
+          selectedListId ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSelectedListId(null);
+                setSelectedVoterId(null);
+              }}
+            >
+              Exit List
+            </Button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="atlas-card" style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <MapIcon style={{ width: 16, height: 16 }} />
+                {syncPill}
+              </span>
+            </div>
+          )
+        }
+      />
+
+      {!selectedListId ? (
+        <div style={{ marginTop: 16, display: 'grid', gap: 12, overflow: 'auto' }}>
+          <div className="atlas-label">My assigned lists</div>
+
+          {myLists.length > 0 ? (
+            myLists.map((list) => (
+              <Card
+                key={list.id}
+                style={{ padding: 16, cursor: 'pointer' }}
+                onClick={() => setSelectedListId(list.id) as any}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                    <div className="atlas-card" style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <ListBulletIcon style={{ width: 20, height: 20, color: atlasTokens.color.primary }} />
                     </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-800">Field Workspace</h1>
-                        <div className="flex items-center space-x-2 mt-0.5">
-                            {syncState === 'synced' && <span className="flex items-center text-xs text-green-600 font-medium"><CheckIcon className="h-3 w-3 mr-1" /> Synced</span>}
-                            {syncState === 'syncing' && <span className="flex items-center text-xs text-indigo-600 font-medium animate-pulse"><CloudArrowUpIcon className="h-3 w-3 mr-1" /> Syncing...</span>}
-                             {syncState === 'error' && <span className="flex items-center text-xs text-red-600 font-medium"><ExclamationTriangleIcon className="h-3 w-3 mr-1" /> Error</span>}
-                        </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 16 }}>{list.name}</div>
+                      <div className="atlas-help">{list.voterIds.length} households</div>
                     </div>
+                  </div>
+                  <span className="atlas-chip atlas-chip--registered">Open Turf</span>
                 </div>
-                {selectedListId && (
-                    <button onClick={() => { setSelectedListId(null); setSelectedVoterId(null); }} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">
-                        Exit List
-                    </button>
-                )}
+              </Card>
+            ))
+          ) : (
+            <Card style={{ padding: 20, textAlign: 'center' }}>
+              <ClockIcon style={{ width: 32, height: 32, opacity: 0.45 }} />
+              <div className="atlas-help" style={{ marginTop: 10 }}>
+                No turf assigned yet.
+              </div>
+            </Card>
+          )}
+        </div>
+      ) : (
+        <Card style={{ marginTop: 16, padding: 0, overflow: 'hidden', minHeight: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div
+            className="atlas-card"
+            style={{
+              borderRadius: 0,
+              borderLeft: 'none',
+              borderRight: 'none',
+              borderTop: 'none',
+              padding: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <div>
+              <div className="atlas-label">List</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}>{activeList?.name}</div>
             </div>
 
-            {!selectedListId ? (
-                <div className="grid grid-cols-1 gap-4 overflow-y-auto">
-                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">My Assigned Lists</h2>
-                    {myLists.length > 0 ? myLists.map(list => (
-                        <div key={list.id} onClick={() => setSelectedListId(list.id)} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:border-indigo-400 cursor-pointer transition-all group flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                                <div className="bg-gray-50 p-3 rounded-full group-hover:bg-indigo-50 transition-colors">
-                                    <ListBulletIcon className="h-6 w-6 text-gray-400 group-hover:text-indigo-500" />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-gray-800 text-lg">{list.name}</h3>
-                                    <p className="text-sm text-gray-500">{list.voterIds.length} households</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <span className="inline-flex items-center px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100">Open Turf</span>
-                            </div>
-                        </div>
-                    )) : (
-                        <div className="bg-white p-12 text-center rounded-xl border-2 border-dashed border-gray-200">
-                             <ClockIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                             <p className="text-gray-500 font-medium">No turf assigned yet.</p>
-                        </div>
-                    )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button variant={viewMode === 'list' ? 'primary' : 'secondary'} onClick={() => setViewMode('list')}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <ListBulletIcon style={{ width: 16, height: 16 }} /> List
+                </span>
+              </Button>
+              <Button variant={viewMode === 'map' ? 'primary' : 'secondary'} onClick={() => setViewMode('map')}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <MapIcon style={{ width: 16, height: 16 }} /> Map
+                </span>
+              </Button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', minHeight: 0, flex: 1 }}>
+            {/* Left: voter list/map */}
+            <div style={{ flex: 1, minHeight: 0, overflow: 'auto', borderRight: '1px solid rgba(209, 217, 224, 0.65)' }}>
+              {viewMode === 'list' ? (
+                <div style={{ display: 'grid', gap: 8, padding: 12 }}>
+                  {activeVoters.map((v, idx) => (
+                    <VoterItem key={v.id} voter={v} index={idx} />
+                  ))}
                 </div>
-            ) : (
-                <div className="flex-1 flex flex-col min-h-0 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                    <div className="bg-gray-50 p-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
-                        <h2 className="font-bold text-gray-700">{activeList?.name}</h2>
-                        <div className="flex bg-white rounded-lg p-1 border border-gray-200">
-                             <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
-                                <ListBulletIcon className="h-4 w-4 mr-1" /> List
-                             </button>
-                             <button onClick={() => setViewMode('map')} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center ${viewMode === 'map' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
-                                <MapIcon className="h-4 w-4 mr-1" /> Map
-                             </button>
+              ) : (
+                <div ref={mapRef} style={{ width: '100%', height: '100%', minHeight: 420, background: 'rgba(209, 217, 224, 0.25)' }} />
+              )}
+            </div>
+
+            {/* Right: interaction panel */}
+            {selectedVoterId ? (
+              <div style={{ width: '42%', minWidth: 360, maxWidth: 520, minHeight: 0, overflow: 'auto' }}>
+                <div style={{ padding: 12 }}>
+                  <Card style={{ padding: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                      <div>
+                        <div className="atlas-label">Voter</div>
+                        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 18, marginTop: 4 }}>
+                          {selectedVoter?.firstName} {selectedVoter?.lastName}
                         </div>
+                        <div className="atlas-help" style={{ marginTop: 4 }}>
+                          {selectedVoter?.address}
+                        </div>
+                      </div>
+                      <Button variant="secondary" onClick={() => setSelectedVoterId(null)}>
+                        Back
+                      </Button>
+                    </div>
+                  </Card>
+
+                  {selectedVoterHistory.length > 0 ? (
+                    <Card style={{ padding: 14, marginTop: 12 }}>
+                      <div className="atlas-label">Previous interactions</div>
+                      <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
+                        {selectedVoterHistory.slice(0, 10).map((hist) => (
+                          <div key={hist.id} className="atlas-card" style={{ padding: 10 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                              <span
+                                className={
+                                  hist.result_code === 'contacted'
+                                    ? 'atlas-chip atlas-chip--status-contacted'
+                                    : hist.result_code === 'not_home'
+                                      ? 'atlas-chip atlas-chip--status-not-home'
+                                      : 'atlas-chip atlas-chip--status-refused'
+                                }
+                              >
+                                {hist.result_code.replace('_', ' ')}
+                              </span>
+                              <span className="atlas-help" style={{ opacity: 0.7 }}>
+                                {new Date(hist.occurred_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {hist.notes ? (
+                              <div className="atlas-help" style={{ marginTop: 6, fontStyle: 'italic' }}>
+                                “{hist.notes}”
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  ) : null}
+
+                  <Card style={{ padding: 14, marginTop: 12 }}>
+                    <div className="atlas-label">Record result</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+                      <Button variant="primary" onClick={() => handleRecordInteraction('contacted', 5)}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          <CheckCircleIcon style={{ width: 18, height: 18 }} /> At Home
+                        </span>
+                      </Button>
+                      <Button variant="secondary" onClick={() => handleRecordInteraction('not_home')}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          <ClockIcon style={{ width: 18, height: 18 }} /> Not Home
+                        </span>
+                      </Button>
+                      <Button variant="critical" onClick={() => handleRecordInteraction('refused')}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          <NoSymbolIcon style={{ width: 18, height: 18 }} /> Refused
+                        </span>
+                      </Button>
+                      <Button variant="secondary" onClick={() => handleRecordInteraction('inaccessible')}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          <XCircleIcon style={{ width: 18, height: 18 }} /> Inaccessible
+                        </span>
+                      </Button>
                     </div>
 
-                    <div className="flex-1 flex min-h-0 relative">
-                        {/* Voter Selection Panel */}
-                        <div className={`flex-1 overflow-y-auto border-r border-gray-100 ${selectedVoterId ? 'hidden md:block' : 'block'}`}>
-                            {viewMode === 'list' ? (
-                                <div className="divide-y divide-gray-50">
-                                    {activeVoters.map((voter, idx) => <VoterItem key={voter.id} voter={voter} index={idx} />)}
-                                </div>
-                            ) : (
-                                <div ref={mapRef} className="w-full h-full bg-gray-100" />
-                            )}
-                        </div>
-
-                        {/* Interaction Recording Panel */}
-                        {selectedVoterId && (
-                             <div className="absolute inset-0 md:static md:flex-1 bg-white z-20 flex flex-col">
-                                <div className="p-6 h-full flex flex-col overflow-y-auto">
-                                    <div className="mb-6 flex items-start justify-between flex-shrink-0">
-                                        <div>
-                                            <h2 className="text-2xl font-black text-gray-900">
-                                                {voters.find(v => v.id === selectedVoterId)?.firstName} {voters.find(v => v.id === selectedVoterId)?.lastName}
-                                            </h2>
-                                            <p className="text-gray-500">{voters.find(v => v.id === selectedVoterId)?.address}</p>
-                                        </div>
-                                        <button onClick={() => setSelectedVoterId(null)} className="md:hidden text-indigo-600 font-bold text-sm bg-indigo-50 px-3 py-1 rounded-lg">&larr; Back</button>
-                                    </div>
-
-                                    {/* History Section */}
-                                    {selectedVoterHistory.length > 0 && (
-                                        <div className="mb-6 bg-amber-50 rounded-lg p-3 border border-amber-100 flex-shrink-0">
-                                            <h3 className="text-xs font-bold text-amber-800 uppercase mb-2">Previous Interactions</h3>
-                                            <div className="space-y-2 max-h-32 overflow-y-auto">
-                                                {selectedVoterHistory.map(hist => (
-                                                    <div key={hist.id} className="text-xs text-gray-700 bg-white p-2 rounded shadow-sm">
-                                                        <div className="flex justify-between font-semibold">
-                                                            <span className={hist.result_code === 'contacted' ? 'text-green-600' : 'text-amber-600'}>
-                                                                {hist.result_code.replace('_', ' ').toUpperCase()}
-                                                            </span>
-                                                            <span className="text-gray-400">{new Date(hist.occurred_at).toLocaleDateString()}</span>
-                                                        </div>
-                                                        {hist.notes && <p className="italic mt-1 text-gray-500">"{hist.notes}"</p>}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-4 flex-1 pr-2">
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <button onClick={() => handleRecordInteraction('contacted', 5)} className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-green-50 hover:border-green-400 transition-all text-green-600 group">
-                                                <CheckCircleIcon className="h-8 w-8 mb-2 group-hover:scale-110 transition-transform" />
-                                                <span className="text-xs font-bold uppercase tracking-widest">At Home</span>
-                                            </button>
-                                            <button onClick={() => handleRecordInteraction('not_home')} className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-amber-50 hover:border-amber-400 transition-all text-amber-600 group">
-                                                <ClockIcon className="h-8 w-8 mb-2 group-hover:scale-110 transition-transform" />
-                                                <span className="text-xs font-bold uppercase tracking-widest">Not Home</span>
-                                            </button>
-                                            <button onClick={() => handleRecordInteraction('refused')} className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-red-50 hover:border-red-400 transition-all text-red-600 group">
-                                                <NoSymbolIcon className="h-8 w-8 mb-2 group-hover:scale-110 transition-transform" />
-                                                <span className="text-xs font-bold uppercase tracking-widest">Refused</span>
-                                            </button>
-                                            <button onClick={() => handleRecordInteraction('inaccessible')} className="flex flex-col items-center justify-center p-4 bg-white rounded-xl border-2 border-gray-100 hover:border-gray-400 transition-all text-gray-500 group">
-                                                <XCircleIcon className="h-8 w-8 mb-2 group-hover:scale-110 transition-transform" />
-                                                <span className="text-xs font-bold uppercase tracking-widest">Inaccessible</span>
-                                            </button>
-                                        </div>
-
-                                        <div className="pt-4 border-t border-gray-200">
-                                            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Field Notes</label>
-                                            <div className="relative">
-                                                <PencilSquareIcon className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
-                                                <textarea className="w-full pl-10 p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-h-[100px] text-sm" placeholder="Support level? Yard sign requested?"></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="mt-4 flex space-x-3 flex-shrink-0">
-                                        <button onClick={() => setSelectedVoterId(null)} className="flex-1 py-3 px-4 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-colors">Skip</button>
-                                        <button onClick={() => handleRecordInteraction('contacted', 3, "Recorded through portal")} className="flex-[2] py-3 px-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-md transition-colors">Save Entry</button>
-                                    </div>
-                                </div>
-                             </div>
-                        )}
+                    <div style={{ marginTop: 12 }}>
+                      <div className="atlas-label" style={{ marginBottom: 6 }}>
+                        Field notes
+                      </div>
+                      <div style={{ position: 'relative' }}>
+                        <PencilSquareIcon style={{ width: 16, height: 16, position: 'absolute', top: 12, left: 12, opacity: 0.65 }} />
+                        <textarea
+                          className="atlas-input"
+                          style={{ paddingLeft: 36, minHeight: 110, resize: 'vertical' }}
+                          placeholder="Support level? Yard sign requested?"
+                        />
+                      </div>
                     </div>
+
+                    <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
+                      <Button variant="secondary" onClick={() => setSelectedVoterId(null)} style={{ flex: 1 }}>
+                        Skip
+                      </Button>
+                      <Button variant="primary" onClick={() => handleRecordInteraction('contacted', 3, 'Recorded through portal')} style={{ flex: 2 }}>
+                        Save Entry
+                      </Button>
+                    </div>
+                  </Card>
                 </div>
-            )}
-        </div>
-    );
+              </div>
+            ) : null}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
 };
 
 export default CanvasserPortal;
