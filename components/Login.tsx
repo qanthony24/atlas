@@ -140,102 +140,96 @@ const Login: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-md p-6 border border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-800">Atlas (Dev) Login</h1>
-        <p className="text-sm text-gray-500 mt-1">Sign in to load Campaign Core.</p>
+    <div className="atlas-auth">
+      <div className="atlas-card atlas-auth-card">
+        <div className="atlas-auth-header">
+          <img className="atlas-auth-logo" src="/assets/atlas-logo-invert.png" alt="Atlas" />
+        </div>
 
-        <div className="mt-6 space-y-6">
-          <form className="space-y-4" onSubmit={onPasswordSubmit}>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</label>
-            <input
-              className="mt-1 w-full border rounded-md px-3 py-2"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="username"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">Password</label>
-            <input
-              className="mt-1 w-full border rounded-md px-3 py-2"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-          </div>
+        <div className="atlas-label">Sign in</div>
+        <div className="atlas-help" style={{ marginTop: 6 }}>Load campaign context and assignments.</div>
 
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
-              {error}
+        <div style={{ marginTop: 16, display: 'grid', gap: 16 }}>
+          <form onSubmit={onPasswordSubmit} style={{ display: 'grid', gap: 12 }}>
+            <div>
+              <label className="atlas-label">Email</label>
+              <div style={{ marginTop: 6 }}>
+                <input
+                  className="atlas-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="username"
+                />
+              </div>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-md disabled:opacity-60"
-          >
-            {loading ? 'Signing in…' : 'Sign in (password)'}
-          </button>
+            <div>
+              <label className="atlas-label">Password</label>
+              <div style={{ marginTop: 6 }}>
+                <input
+                  className="atlas-input"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+            </div>
+
+            {error ? <div className="atlas-error">{error}</div> : null}
+
+            <button type="submit" disabled={loading} className="atlas-btn atlas-btn-primary" style={{ width: '100%' }}>
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
           </form>
 
-          <div className="border-t pt-4">
-            <div className="flex items-center justify-between">
+          <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <div>
-                <div className="text-sm font-semibold text-gray-800">Sign in with a code</div>
-                <div className="text-xs text-gray-500">We’ll email you a code and a sign-in link.</div>
+                <div className="atlas-label">Sign in with a code</div>
+                <div className="atlas-help" style={{ marginTop: 4 }}>We’ll email you a code and a sign-in link.</div>
               </div>
               <button
                 type="button"
                 onClick={requestOtp}
                 disabled={loading || !email}
-                className="bg-gray-900 hover:bg-black text-white text-sm font-semibold px-3 py-2 rounded-md disabled:opacity-60"
+                className="atlas-btn atlas-btn-secondary"
               >
                 {loading ? 'Sending…' : otpSent ? 'Resend code' : 'Send code'}
               </button>
             </div>
 
             {!magicToken && otpSent && (
-              <form className="mt-4 space-y-3" onSubmit={verifyOtp}>
+              <form onSubmit={verifyOtp} style={{ marginTop: 12, display: 'grid', gap: 12 }}>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">6-digit code</label>
-                  <input
-                    className="mt-1 w-full border rounded-md px-3 py-2"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    placeholder="123456"
-                  />
+                  <label className="atlas-label">6-digit code</label>
+                  <div style={{ marginTop: 6 }}>
+                    <input
+                      className="atlas-input atlas-mono"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="123456"
+                    />
+                  </div>
                 </div>
                 <button
                   type="submit"
                   disabled={loading || otpCode.trim().length < 6}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-md disabled:opacity-60"
+                  className="atlas-btn atlas-btn-primary"
+                  style={{ width: '100%' }}
                 >
                   {loading ? 'Verifying…' : 'Verify code'}
                 </button>
               </form>
             )}
 
-            {magicToken && (
-              <div className="mt-3 text-xs text-gray-600">
-                Signing you in from magic link…
-              </div>
-            )}
+            {magicToken ? <div className="atlas-help" style={{ marginTop: 10 }}>Signing you in from magic link…</div> : null}
           </div>
 
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
-              {error}
-            </div>
-          )}
-
-          <div className="text-[11px] text-gray-500">
-            Using API: <code className="break-all">{getApiOrigin() || '(not set)'}</code>
+          <div className="atlas-help" style={{ fontSize: 11 }}>
+            Using API: <span className="atlas-mono" style={{ wordBreak: 'break-all' }}>{getApiOrigin() || '(not set)'}</span>
           </div>
         </div>
       </div>
