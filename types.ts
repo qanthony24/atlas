@@ -146,3 +146,46 @@ export interface AuditLogEntry {
     occurred_at: string;
     metadata?: any;
 }
+
+// --- Phase 3: Campaign Setup (Onboarding) ---
+
+export type CampaignPhase = 'primary' | 'general' | string;
+
+export interface CampaignProfile {
+    id: string;
+    org_id: string;
+    office_type?: string | null;
+    district_type?: string | null;
+    election_date?: string | null; // ISO date (YYYY-MM-DD)
+    win_number_target?: number | null;
+    expected_turnout?: number | null;
+    geography_unit_type?: string | null; // precinct | ward | parish | custom
+    campaign_phase?: CampaignPhase | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export type CampaignGoalType = 'doors' | 'contacts' | 'ids' | 'turnout';
+
+export interface CampaignGoal {
+    id: string;
+    org_id: string;
+    goal_type: CampaignGoalType;
+    target_value: number;
+    start_date: string; // YYYY-MM-DD
+    end_date: string;   // YYYY-MM-DD
+    created_at: string;
+}
+
+export interface GeographyUnit {
+    id: string;
+    org_id: string;
+    unit_type: string;
+    external_id?: string | null;
+    name: string;
+    past_turnout?: number | null;
+    past_dem_result?: number | null;
+    geometry_json?: any | null;
+    created_at: string;
+    updated_at: string;
+}

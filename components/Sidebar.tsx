@@ -1,5 +1,5 @@
 
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
     HomeIcon, 
@@ -24,6 +24,18 @@ const Sidebar: React.FC = () => {
     const userRole = currentUser.role;
 
     const internalMode = (import.meta as any).env?.VITE_INTERNAL_MODE === 'true';
+
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const onDown = (e: MouseEvent) => {
+            if (!menuRef.current) return;
+            if (!menuRef.current.contains(e.target as any)) setUserMenuOpen(false);
+        };
+        window.addEventListener('mousedown', onDown);
+        return () => window.removeEventListener('mousedown', onDown);
+    }, []);
 
     const navLinkClasses = "atlas-nav-item";
     const activeNavLinkClasses = "atlas-nav-item--active";
@@ -129,15 +141,65 @@ const Sidebar: React.FC = () => {
                 </nav>
             </div>
 
-            <div className="atlas-sidebar-footer">
-                <div className="atlas-sidebar-user">
+            <div className="atlas-sidebar-footer" style={{ position: 'relative' }} ref={menuRef}>
+                {userMenuOpen && (
+                    <div
+                        className="atlas-card"
+                        style={{
+                            position: 'absolute',
+                            bottom: 56,
+                            left: 12,
+                            right: 12,
+                            padding: 10,
+                            background: 'rgba(244, 247, 249, 0.96)',
+                            zIndex: 20,
+                        }}
+                    >
+                        <div className="atlas-label" style={{ marginBottom: 8 }}>Menu</div>
+                        <div style={{ display: 'grid', gap: 8 }}>
+                            <button
+                                className="atlas-btn atlas-btn-secondary"
+                                style={{ justifyContent: 'flex-start', textAlign: 'left' }}
+                                onClick={() => { setUserMenuOpen(false); navigate('/settings'); }}
+                            >
+                                Settings
+                            </button>
+
+                            {userRole === 'admin' && (
+                                <button
+                                    className="atlas-btn atlas-btn-secondary"
+                                    style={{ justifyContent: 'flex-start', textAlign: 'left' }}
+                                    onClick={() => { setUserMenuOpen(false); navigate('/campaign-setup'); }}
+                                >
+                                    Campaign Setup
+                                </button>
+                            )}
+
+                            <div style={{ height: 1, background: 'rgba(209, 217, 224, 0.65)' }} />
+
+                            <button
+                                className="atlas-btn atlas-btn-secondary"
+                                style={{ justifyContent: 'flex-start', textAlign: 'left' }}
+                                onClick={handleLogout}
+                            >
+                                Log out
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="atlas-sidebar-user" style={{ cursor: 'pointer' }} onClick={() => setUserMenuOpen(v => !v)}>
                     <UserCircleIcon className="atlas-nav-icon" />
                     <div className="atlas-sidebar-user-meta">
                         <div className="atlas-sidebar-user-name">{currentUser.name}</div>
                         <div className="atlas-sidebar-user-email">{currentUser.email}</div>
                     </div>
                     <div className="atlas-sidebar-logout">
-                        <button className="atlas-btn atlas-btn-secondary atlas-btn-secondary--dark" onClick={handleLogout} title="Log out">
+                        <button
+                            className="atlas-btn atlas-btn-secondary atlas-btn-secondary--dark"
+                            onClick={(e) => { e.stopPropagation(); setUserMenuOpen(false); handleLogout(); }}
+                            title="Log out"
+                        >
                             Log out
                         </button>
                     </div>

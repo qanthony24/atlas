@@ -2,7 +2,8 @@
 import { IDataClient } from './client';
 import { 
     User, Organization, UserRole, Voter, WalkList, 
-    Assignment, InteractionCreate, Interaction, Job 
+    Assignment, InteractionCreate, Interaction, Job,
+    CampaignProfile, CampaignGoal, GeographyUnit
 } from '../types';
 import { components, paths } from './contract';
 import { getApiOrigin } from '../utils/apiOrigin';
@@ -219,5 +220,31 @@ export class RealDataClient implements IDataClient {
 
     async mergeLeadIntoVoter(leadVoterId: string, importedVoterId: string): Promise<any> {
         return this.request<any>('POST', `/voters/${encodeURIComponent(leadVoterId)}/merge-into/${encodeURIComponent(importedVoterId)}`);
+    }
+
+    // --- Phase 3: Campaign Setup (Onboarding) ---
+
+    async getCampaignProfile(): Promise<CampaignProfile | null> {
+        return this.request<CampaignProfile | null>('GET', `/campaign/profile`);
+    }
+
+    async upsertCampaignProfile(profile: Partial<CampaignProfile>): Promise<CampaignProfile> {
+        return this.request<CampaignProfile>('PUT', `/campaign/profile`, profile);
+    }
+
+    async getCampaignGoals(): Promise<{ goals: CampaignGoal[] }> {
+        return this.request<{ goals: CampaignGoal[] }>('GET', `/campaign/goals`);
+    }
+
+    async createCampaignGoal(goal: Partial<CampaignGoal>): Promise<CampaignGoal> {
+        return this.request<CampaignGoal>('POST', `/campaign/goals`, goal);
+    }
+
+    async getGeographyUnits(): Promise<{ units: GeographyUnit[] }> {
+        return this.request<{ units: GeographyUnit[] }>('GET', `/geography/units`);
+    }
+
+    async upsertGeographyUnit(unit: Partial<GeographyUnit>): Promise<GeographyUnit> {
+        return this.request<GeographyUnit>('POST', `/geography/units`, unit);
     }
 }

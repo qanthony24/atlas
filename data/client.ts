@@ -14,6 +14,14 @@ import { RealDataClient } from './RealDataClient';
  * 4. All write operations must be idempotent where possible.
  */
 export interface IDataClient {
+    // --- Phase 3: Campaign Setup (Onboarding) ---
+    getCampaignProfile?(): Promise<any>;
+    upsertCampaignProfile?(profile: Partial<any>): Promise<any>;
+    getCampaignGoals?(): Promise<any>;
+    createCampaignGoal?(goal: Partial<any>): Promise<any>;
+    getGeographyUnits?(): Promise<any>;
+    upsertGeographyUnit?(unit: Partial<any>): Promise<any>;
+
     // --- Session & Identity ---
     /** Returns the currently authenticated user with context. Throws if no session. */
     getCurrentUser(): Promise<User>;
@@ -120,6 +128,11 @@ export class MockDataClient implements IDataClient {
 
     // Simulate session
     private currentUserId = 'user-admin';
+
+    // Phase 3 onboarding mock storage
+    private campaignProfile: any = null;
+    private campaignGoals: any[] = [];
+    private geographyUnits: any[] = [];
 
     // --- Internal Platform Helpers ---
 
@@ -460,6 +473,57 @@ export class MockDataClient implements IDataClient {
             this.users.push(newUser);
             this.logAudit('user.invite', { newUserId: newUser.id, role: 'canvasser' });
             return newUser;
+        });
+    }
+
+    // --- Phase 3: Campaign Setup (Onboarding) ---
+
+    async getCampaignProfile(): Promise<any> {
+        return this.executeWithContext('getCampaignProfile', async () => this.campaignProfile);
+    }
+
+    async upsertCampaignProfile(profile: Partial<any>): Promise<any> {
+        return this.executeWithContext('upsertCampaignProfile', async () => {
+            this.campaignProfile = {
+                ...(this.campaignProfile || { id: `cp-${Date.now()}`, org_id: this.currentOrg.id, created_at: new Date().toISOString() }),
+                ...profile,
+                updated_at: new Date().toISOString(),
+            };
+            this.logAudit('campaign_profile.upsert', this.campaignProfile);
+            return this.campaignProfile;
+        });
+    }
+
+    async getCampaignGoals(): Promise<any> {
+        return this.executeWithContext('getCampaignGoals', async () => ({ goals: this.campaignGoals.slice().reverse() }));
+    }
+
+    async createCampaignGoal(goal: Partial<any>): Promise<any> {
+        return this.executeWithContext('createCampaignGoal', async () => {
+            const g = { id: `cg-${Date.now()}`, org_id: this.currentOrg.id, created_at: new Date().toISOString(), ...goal };
+            this.campaignGoals.push(g);
+            this.logAudit('campaign_goal.create', g);
+            return g;
+        });
+    }
+
+    async getGeographyUnits(): Promise<any> {
+        return this.executeWithContext('getGeographyUnits', async () => ({ units: this.geographyUnits }));
+    }
+
+    async upsertGeographyUnit(unit: Partial<any>): Promise<any> {
+        return this.executeWithContext('upsertGeographyUnit', async () => {
+            const existingIdx = this.geographyUnits.findIndex((u) => u.unit_type === unit.unit_type && u.external_id === unit.external_id);
+            const row = {
+                id: existingIdx >= 0 ? this.geographyUnits[existingIdx].id : `gu-${Date.now()}`,
+                org_id: this.currentOrg.id,
+                created_at: existingIdx >= 0 ? this.geographyUnits[existingIdx].created_at : new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                ...unit,
+            };
+            if (existingIdx >= 0) this.geographyUnits[existingIdx] = row; else this.geographyUnits.push(row);
+            this.logAudit('geography_unit.upsert', row);
+            return row;
         });
     }
 }

@@ -11,6 +11,8 @@ import CanvasserManager from './components/CanvasserManager';
 import ListAssignments from './components/ListAssignments';
 import LiveTracking from './components/LiveTracking';
 import CanvasserPortal from './components/CanvasserPortal';
+import CampaignSetup from './components/CampaignSetup';
+import Settings from './components/Settings';
 import { AppContext } from './components/AppContext';
 import { client } from './data/client';
 import { User, Voter, WalkList, Assignment, Interaction, Organization } from './types';
@@ -124,6 +126,8 @@ const App: React.FC = () => {
                                             <Route path="/canvassers" element={<CanvasserManager />} />
                                             <Route path="/assignments" element={<ListAssignments />} />
                                             <Route path="/live" element={<LiveTracking />} />
+                                            <Route path="/settings" element={<Settings />} />
+                                            <Route path="/campaign-setup" element={<CampaignSetup />} />
                                         </>
                                     ) : (
                                         <>
@@ -132,6 +136,9 @@ const App: React.FC = () => {
                                             <Route path="*" element={<Navigate to="/my-turf" />} />
                                         </>
                                     )}
+                                    {/* Shared routes (admin + canvasser) */}
+                                    <Route path="/settings" element={<Settings />} />
+
                                     {/* Fallback for admin trying to view canvasser portal or generic */}
                                     <Route path="/my-turf" element={<CanvasserPortal />} />
                             </Routes>
