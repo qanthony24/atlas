@@ -194,10 +194,32 @@ const VoterUniverse: React.FC = () => {
                                                     <div className="atlas-help">{voter.city}, {voter.state} {voter.zip}</div>
                                                 </td>
                                                 <td>
-                                                    <span className="atlas-chip">{voter.party || '—'}</span>
+                                                    <span
+                                                        className={
+                                                            voter.party === 'Democrat'
+                                                                ? 'atlas-chip atlas-chip--party-dem'
+                                                                : voter.party === 'Republican'
+                                                                  ? 'atlas-chip atlas-chip--party-rep'
+                                                                  : 'atlas-chip'
+                                                        }
+                                                    >
+                                                        {voter.party || '—'}
+                                                    </span>
                                                 </td>
                                                 <td>
-                                                    <span className="atlas-chip">{voter.lastInteractionStatus ? voter.lastInteractionStatus.replace('_', ' ') : 'Pending'}</span>
+                                                    <span
+                                                        className={
+                                                            voter.lastInteractionStatus === 'contacted'
+                                                                ? 'atlas-chip atlas-chip--status-contacted'
+                                                                : voter.lastInteractionStatus === 'not_home'
+                                                                  ? 'atlas-chip atlas-chip--status-not-home'
+                                                                  : voter.lastInteractionStatus === 'refused'
+                                                                    ? 'atlas-chip atlas-chip--status-refused'
+                                                                    : 'atlas-chip'
+                                                        }
+                                                    >
+                                                        {voter.lastInteractionStatus ? voter.lastInteractionStatus.replace('_', ' ') : 'Pending'}
+                                                    </span>
                                                 </td>
                                             </tr>
                                         ))}

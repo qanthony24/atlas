@@ -271,6 +271,37 @@ body {
   background: rgba(0, 163, 224, 0.08);
 }
 
+/* Semantic chips */
+.atlas-chip--party-dem {
+  border-color: rgba(0, 163, 224, 0.45);
+  color: rgba(0, 163, 224, 0.95);
+  background: rgba(0, 163, 224, 0.08);
+}
+
+.atlas-chip--party-rep {
+  border-color: rgba(255, 130, 0, 0.55);
+  color: rgba(255, 130, 0, 0.95);
+  background: rgba(255, 130, 0, 0.10);
+}
+
+.atlas-chip--status-contacted {
+  border-color: rgba(0, 163, 224, 0.55);
+  color: rgba(0, 163, 224, 0.95);
+  background: rgba(0, 163, 224, 0.10);
+}
+
+.atlas-chip--status-not-home {
+  border-color: rgba(209, 217, 224, 0.90);
+  color: rgba(51, 51, 51, 0.80);
+  background: rgba(209, 217, 224, 0.20);
+}
+
+.atlas-chip--status-refused {
+  border-color: rgba(255, 130, 0, 0.70);
+  color: rgba(255, 130, 0, 0.95);
+  background: rgba(255, 130, 0, 0.16);
+}
+
 /* Login */
 .atlas-auth {
   min-height: 100vh;
