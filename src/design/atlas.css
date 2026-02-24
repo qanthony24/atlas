@@ -226,22 +226,46 @@ body {
   padding: 24px;
 }
 
+/* The mockup shows a blueprint panel sitting on the drafting table. */
 .atlas-auth-card {
   width: 100%;
   max-width: 420px;
   padding: 20px;
 }
 
+.atlas-auth-card--blueprint {
+  background-color: var(--color-primary);
+  border-color: rgba(255,255,255,0.14);
+  color: white;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
 .atlas-auth-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 0 18px 0;
+  padding: 14px 0 18px 0;
 }
 
 .atlas-auth-logo {
   height: 44px;
   width: auto;
+}
+
+.atlas-auth-title,
+.atlas-auth-subtitle {
+  color: rgba(255,255,255,0.92);
+}
+
+.atlas-auth-divider {
+  border-top: 1px solid rgba(255,255,255,0.14);
+}
+
+.atlas-auth-footnote {
+  opacity: 0.65;
 }
 
 .atlas-input {
@@ -254,9 +278,23 @@ body {
   color: var(--color-text-primary);
 }
 
+.atlas-input--dark {
+  border-color: rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.14);
+  color: rgba(255,255,255,0.92);
+}
+
+.atlas-input::placeholder {
+  color: rgba(51,51,51,0.6);
+}
+
+.atlas-input--dark::placeholder {
+  color: rgba(255,255,255,0.55);
+}
+
 .atlas-input:focus {
   outline: none;
-  border-color: rgba(0, 163, 224, 0.65);
+  border-color: rgba(0, 163, 224, 0.75);
   box-shadow: 0 0 0 2px rgba(0, 163, 224, 0.18);
 }
 
@@ -265,11 +303,20 @@ body {
   opacity: 0.8;
 }
 
+.atlas-btn-secondary--dark {
+  border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.92);
+}
+
+.atlas-btn-secondary--dark:hover {
+  background: rgba(255,255,255,0.06);
+}
+
 .atlas-error {
   font-size: 12px;
-  color: #7a1c1c;
-  background: rgba(255, 130, 0, 0.10);
-  border: 1px solid rgba(255, 130, 0, 0.35);
+  color: rgba(255,255,255,0.92);
+  background: rgba(255, 130, 0, 0.20);
+  border: 1px solid rgba(255, 130, 0, 0.45);
   border-radius: var(--radius-drafting);
   padding: 10px 12px;
 }

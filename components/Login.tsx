@@ -141,13 +141,13 @@ const Login: React.FC = () => {
 
   return (
     <div className="atlas-auth">
-      <div className="atlas-card atlas-auth-card">
+      <div className="atlas-card atlas-auth-card atlas-auth-card--blueprint">
         <div className="atlas-auth-header">
           <img className="atlas-auth-logo" src="/assets/atlas-logo-invert.png" alt="Atlas" />
         </div>
 
-        <div className="atlas-label">Sign in</div>
-        <div className="atlas-help" style={{ marginTop: 6 }}>Load campaign context and assignments.</div>
+        <div className="atlas-label atlas-auth-title">Sign in</div>
+        <div className="atlas-help atlas-auth-subtitle" style={{ marginTop: 6 }}>Load campaign context and assignments.</div>
 
         <div style={{ marginTop: 16, display: 'grid', gap: 16 }}>
           <form onSubmit={onPasswordSubmit} style={{ display: 'grid', gap: 12 }}>
@@ -155,7 +155,7 @@ const Login: React.FC = () => {
               <label className="atlas-label">Email</label>
               <div style={{ marginTop: 6 }}>
                 <input
-                  className="atlas-input"
+                  className="atlas-input atlas-input--dark"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="username"
@@ -167,7 +167,7 @@ const Login: React.FC = () => {
               <label className="atlas-label">Password</label>
               <div style={{ marginTop: 6 }}>
                 <input
-                  className="atlas-input"
+                  className="atlas-input atlas-input--dark"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -183,7 +183,7 @@ const Login: React.FC = () => {
             </button>
           </form>
 
-          <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 14 }}>
+          <div className="atlas-auth-divider" style={{ paddingTop: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <div>
                 <div className="atlas-label">Sign in with a code</div>
@@ -193,7 +193,7 @@ const Login: React.FC = () => {
                 type="button"
                 onClick={requestOtp}
                 disabled={loading || !email}
-                className="atlas-btn atlas-btn-secondary"
+                className="atlas-btn atlas-btn-secondary atlas-btn-secondary--dark"
               >
                 {loading ? 'Sending…' : otpSent ? 'Resend code' : 'Send code'}
               </button>
@@ -205,7 +205,7 @@ const Login: React.FC = () => {
                   <label className="atlas-label">6-digit code</label>
                   <div style={{ marginTop: 6 }}>
                     <input
-                      className="atlas-input atlas-mono"
+                      className="atlas-input atlas-input--dark atlas-mono"
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
                       inputMode="numeric"
@@ -228,7 +228,7 @@ const Login: React.FC = () => {
             {magicToken ? <div className="atlas-help" style={{ marginTop: 10 }}>Signing you in from magic link…</div> : null}
           </div>
 
-          <div className="atlas-help" style={{ fontSize: 11 }}>
+          <div className="atlas-help atlas-auth-footnote" style={{ fontSize: 11 }}>
             Using API: <span className="atlas-mono" style={{ wordBreak: 'break-all' }}>{getApiOrigin() || '(not set)'}</span>
           </div>
         </div>
