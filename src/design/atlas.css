@@ -303,12 +303,12 @@ body {
   opacity: 0.8;
 }
 
-.atlas-btn-secondary--dark {
-  border-color: rgba(255,255,255,0.18);
-  color: rgba(255,255,255,0.92);
+.atlas-btn.atlas-btn-secondary--dark {
+  border-color: rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.92) !important;
 }
 
-.atlas-btn-secondary--dark:hover {
+.atlas-btn.atlas-btn-secondary--dark:hover {
   background: rgba(255,255,255,0.06);
 }
 
