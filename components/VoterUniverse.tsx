@@ -208,95 +208,96 @@ const VoterUniverse: React.FC = () => {
                     </>
                 ) : (
                     <div>
-                        <div className="flex items-center justify-between mb-4">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
                             <div>
-                                <h2 className="text-xl font-bold text-gray-800">Potential matches</h2>
-                                <p className="text-sm text-gray-600">Review and merge manual leads into imported voters to keep canvassing history clean.</p>
+                                <div className="atlas-label">Potential matches</div>
+                                <div className="atlas-help" style={{ marginTop: 4 }}>
+                                    Review and merge manual leads into imported voters to keep canvassing history clean.
+                                </div>
                             </div>
-                            <button
-                                onClick={() => loadMergeAlerts()}
-                                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium shadow-sm"
-                            >
+                            <Button variant="secondary" onClick={() => loadMergeAlerts()}>
                                 Refresh
-                            </button>
+                            </Button>
                         </div>
 
-                        {mergeError && (
-                            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
-                                {mergeError}
-                            </div>
-                        )}
+                        {mergeError ? <div className="atlas-error" style={{ marginBottom: 12 }}>{mergeError}</div> : null}
 
                         {mergeLoading ? (
-                            <div className="text-gray-600">Loading matches…</div>
+                            <div className="atlas-help">Loading matches…</div>
                         ) : !mergeAlerts || mergeAlerts.length === 0 ? (
-                            <div className="text-gray-600">No matches to review right now.</div>
+                            <div className="atlas-help">No matches to review right now.</div>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Lead (manual)</th>
-                                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Imported voter</th>
-                                            <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Reason</th>
-                                            <th className="px-4 py-3"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {mergeAlerts.map((a: any) => (
-                                            <tr key={a.id}>
-                                                <td className="px-4 py-3 text-sm">
-                                                    <div className="font-semibold text-gray-900">{a.lead_first_name} {a.lead_last_name}</div>
-                                                    <div className="text-xs text-gray-500">{a.lead_phone || 'No phone'}</div>
-                                                    <div className="text-xs text-gray-500">{a.lead_address}, {a.lead_city} {a.lead_state} {a.lead_zip}</div>
-                                                </td>
-                                                <td className="px-4 py-3 text-sm">
-                                                    <div className="font-semibold text-gray-900">{a.imported_first_name} {a.imported_last_name}</div>
-                                                    <div className="text-xs text-gray-500">Reg #: {a.imported_external_id}</div>
-                                                    <div className="text-xs text-gray-500">{a.imported_phone || 'No phone'}</div>
-                                                    <div className="text-xs text-gray-500">{a.imported_address}, {a.imported_city} {a.imported_state} {a.imported_zip}</div>
-                                                </td>
-                                                <td className="px-4 py-3 text-xs text-gray-600">{a.reason}</td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            onClick={async () => {
-                                                                try {
-                                                                    if (typeof (context.client as any).mergeLeadIntoVoter !== 'function') return;
-                                                                    await (context.client as any).mergeLeadIntoVoter(a.lead_voter_id, a.imported_voter_id);
-                                                                    if (typeof (context.client as any).updateMergeAlert === 'function') {
-                                                                        await (context.client as any).updateMergeAlert(a.id, 'resolved');
-                                                                    }
-                                                                    await refreshData();
-                                                                    await loadMergeAlerts();
-                                                                } catch (e: any) {
-                                                                    setMergeError(e?.message || 'Merge failed');
-                                                                }
-                                                            }}
-                                                            className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-semibold"
-                                                        >
-                                                            Merge
-                                                        </button>
-                                                        <button
-                                                            onClick={async () => {
-                                                                try {
-                                                                    if (typeof (context.client as any).updateMergeAlert !== 'function') return;
-                                                                    await (context.client as any).updateMergeAlert(a.id, 'dismissed');
-                                                                    await loadMergeAlerts();
-                                                                } catch (e: any) {
-                                                                    setMergeError(e?.message || 'Dismiss failed');
-                                                                }
-                                                            }}
-                                                            className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-semibold"
-                                                        >
-                                                            Dismiss
-                                                        </button>
-                                                    </div>
-                                                </td>
+                            <div style={{ overflowX: 'auto' }}>
+                                <div className="atlas-card" style={{ overflow: 'hidden' }}>
+                                    <table className="atlas-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Lead (manual)</th>
+                                                <th>Imported voter</th>
+                                                <th>Reason</th>
+                                                <th></th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {mergeAlerts.map((a: any) => (
+                                                <tr key={a.id}>
+                                                    <td>
+                                                        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>
+                                                            {a.lead_first_name} {a.lead_last_name}
+                                                        </div>
+                                                        <div className="atlas-help atlas-mono" style={{ marginTop: 4 }}>{a.lead_phone || 'No phone'}</div>
+                                                        <div className="atlas-help" style={{ marginTop: 2 }}>{a.lead_address}, {a.lead_city} {a.lead_state} {a.lead_zip}</div>
+                                                    </td>
+                                                    <td>
+                                                        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>
+                                                            {a.imported_first_name} {a.imported_last_name}
+                                                        </div>
+                                                        <div className="atlas-help atlas-mono" style={{ marginTop: 4 }}>Reg #: {a.imported_external_id}</div>
+                                                        <div className="atlas-help atlas-mono" style={{ marginTop: 2 }}>{a.imported_phone || 'No phone'}</div>
+                                                        <div className="atlas-help" style={{ marginTop: 2 }}>{a.imported_address}, {a.imported_city} {a.imported_state} {a.imported_zip}</div>
+                                                    </td>
+                                                    <td className="atlas-help">{a.reason}</td>
+                                                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                                        <div style={{ display: 'inline-flex', gap: 8 }}>
+                                                            <Button
+                                                                variant="critical"
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        if (typeof (context.client as any).mergeLeadIntoVoter !== 'function') return;
+                                                                        await (context.client as any).mergeLeadIntoVoter(a.lead_voter_id, a.imported_voter_id);
+                                                                        if (typeof (context.client as any).updateMergeAlert === 'function') {
+                                                                            await (context.client as any).updateMergeAlert(a.id, 'resolved');
+                                                                        }
+                                                                        await refreshData();
+                                                                        await loadMergeAlerts();
+                                                                    } catch (e: any) {
+                                                                        setMergeError(e?.message || 'Merge failed');
+                                                                    }
+                                                                }}
+                                                            >
+                                                                Merge
+                                                            </Button>
+                                                            <Button
+                                                                variant="secondary"
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        if (typeof (context.client as any).updateMergeAlert !== 'function') return;
+                                                                        await (context.client as any).updateMergeAlert(a.id, 'dismissed');
+                                                                        await loadMergeAlerts();
+                                                                    } catch (e: any) {
+                                                                        setMergeError(e?.message || 'Dismiss failed');
+                                                                    }
+                                                                }}
+                                                            >
+                                                                Dismiss
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         )}
                     </div>
