@@ -10,6 +10,7 @@ import { PlusIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 import { PageHeader } from '../src/design/components/PageHeader';
 import { Button } from '../src/design/components/Button';
 import { Card } from '../src/design/components/Card';
+import { Table } from '../src/design/components/Table';
 
 const VoterUniverse: React.FC = () => {
     const context = useContext(AppContext);
@@ -102,18 +103,12 @@ const VoterUniverse: React.FC = () => {
 
             {currentUser?.role === 'admin' && (
                 <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                        onClick={() => setActiveTab('voters')}
-                        className={['atlas-btn', activeTab === 'voters' ? 'atlas-btn-primary' : 'atlas-btn-secondary'].join(' ')}
-                    >
+                    <Button variant={activeTab === 'voters' ? 'primary' : 'secondary'} onClick={() => setActiveTab('voters')}>
                         Voters
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('merge')}
-                        className={['atlas-btn', activeTab === 'merge' ? 'atlas-btn-primary' : 'atlas-btn-secondary'].join(' ')}
-                    >
+                    </Button>
+                    <Button variant={activeTab === 'merge' ? 'primary' : 'secondary'} onClick={() => setActiveTab('merge')}>
                         Review Matches
-                    </button>
+                    </Button>
                 </div>
             )}
 
@@ -135,97 +130,86 @@ const VoterUniverse: React.FC = () => {
                             />
 
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                <button
-                                    onClick={() => setVoterFilter('all')}
-                                    className={['atlas-btn', voterFilter === 'all' ? 'atlas-btn-primary' : 'atlas-btn-secondary'].join(' ')}
-                                >All</button>
-                                <button
-                                    onClick={() => setVoterFilter('registered')}
-                                    className={['atlas-btn', voterFilter === 'registered' ? 'atlas-btn-primary' : 'atlas-btn-secondary'].join(' ')}
-                                >Registered</button>
-                                <button
-                                    onClick={() => setVoterFilter('leads')}
-                                    className={['atlas-btn', voterFilter === 'leads' ? 'atlas-btn-primary' : 'atlas-btn-secondary'].join(' ')}
-                                >Leads</button>
+                                <Button variant={voterFilter === 'all' ? 'primary' : 'secondary'} onClick={() => setVoterFilter('all')}>All</Button>
+                                <Button variant={voterFilter === 'registered' ? 'primary' : 'secondary'} onClick={() => setVoterFilter('registered')}>Registered</Button>
+                                <Button variant={voterFilter === 'leads' ? 'primary' : 'secondary'} onClick={() => setVoterFilter('leads')}>Leads</Button>
                             </div>
                         </div>
 
                         <div style={{ overflowX: 'auto' }}>
-                            <div className="atlas-card" style={{ overflow: 'hidden' }}>
-                                <table className="atlas-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Demographics</th>
-                                            <th>Address</th>
-                                            <th>Party</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredVoters.map((voter) => (
-                                            <tr
-                                                key={voter.id}
-                                                onClick={() => setSelectedVoter(voter)}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                <td>
-                                                    <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>
-                                                        {voter.firstName} {voter.middleName} {voter.lastName} {voter.suffix}
-                                                    </div>
-                                                    <div className="atlas-help" style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
-                                                        {voter.source === 'manual' ? (
-                                                            <span className="atlas-chip atlas-chip--lead">Lead</span>
-                                                        ) : (
-                                                            <span className="atlas-chip atlas-chip--registered">Registered</span>
-                                                        )}
-                                                        <span className="atlas-mono">{voter.externalId ? `Reg #: ${voter.externalId}` : 'No registration # yet'}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div className="atlas-help" style={{ fontSize: 13 }}>
-                                                        {voter.age ? <span style={{ marginRight: 8 }}>{voter.age}yo</span> : null}
-                                                        {voter.gender ? <span style={{ marginRight: 8 }}>{voter.gender}</span> : null}
-                                                        {voter.race ? <span className="atlas-chip">{voter.race}</span> : null}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div style={{ fontSize: 14 }}>{voter.address} {voter.unit}</div>
-                                                    <div className="atlas-help">{voter.city}, {voter.state} {voter.zip}</div>
-                                                </td>
-                                                <td>
-                                                    <span
-                                                        className={
-                                                            voter.party === 'Democrat'
-                                                                ? 'atlas-chip atlas-chip--party-dem'
-                                                                : voter.party === 'Republican'
-                                                                  ? 'atlas-chip atlas-chip--party-rep'
-                                                                  : 'atlas-chip'
-                                                        }
-                                                    >
-                                                        {voter.party || '—'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span
-                                                        className={
-                                                            voter.lastInteractionStatus === 'contacted'
-                                                                ? 'atlas-chip atlas-chip--status-contacted'
-                                                                : voter.lastInteractionStatus === 'not_home'
-                                                                  ? 'atlas-chip atlas-chip--status-not-home'
-                                                                  : voter.lastInteractionStatus === 'refused'
+                            <Table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Demographics</th>
+                                        <th>Address</th>
+                                        <th>Party</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredVoters.map((voter) => (
+                                        <tr
+                                            key={voter.id}
+                                            onClick={() => setSelectedVoter(voter)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            <td>
+                                                <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>
+                                                    {voter.firstName} {voter.middleName} {voter.lastName} {voter.suffix}
+                                                </div>
+                                                <div className="atlas-help" style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                                                    {voter.source === 'manual' ? (
+                                                        <span className="atlas-chip atlas-chip--lead">Lead</span>
+                                                    ) : (
+                                                        <span className="atlas-chip atlas-chip--registered">Registered</span>
+                                                    )}
+                                                    <span className="atlas-mono">{voter.externalId ? `Reg #: ${voter.externalId}` : 'No registration # yet'}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="atlas-help" style={{ fontSize: 13 }}>
+                                                    {voter.age ? <span style={{ marginRight: 8 }}>{voter.age}yo</span> : null}
+                                                    {voter.gender ? <span style={{ marginRight: 8 }}>{voter.gender}</span> : null}
+                                                    {voter.race ? <span className="atlas-chip">{voter.race}</span> : null}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div style={{ fontSize: 14 }}>{voter.address} {voter.unit}</div>
+                                                <div className="atlas-help">{voter.city}, {voter.state} {voter.zip}</div>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    className={
+                                                        voter.party === 'Democrat'
+                                                            ? 'atlas-chip atlas-chip--party-dem'
+                                                            : voter.party === 'Republican'
+                                                                ? 'atlas-chip atlas-chip--party-rep'
+                                                                : 'atlas-chip'
+                                                    }
+                                                >
+                                                    {voter.party || '—'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    className={
+                                                        voter.lastInteractionStatus === 'contacted'
+                                                            ? 'atlas-chip atlas-chip--status-contacted'
+                                                            : voter.lastInteractionStatus === 'not_home'
+                                                                ? 'atlas-chip atlas-chip--status-not-home'
+                                                                : voter.lastInteractionStatus === 'refused'
                                                                     ? 'atlas-chip atlas-chip--status-refused'
                                                                     : 'atlas-chip'
-                                                        }
-                                                    >
-                                                        {voter.lastInteractionStatus ? voter.lastInteractionStatus.replace('_', ' ') : 'Pending'}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                                    }
+                                                >
+                                                    {voter.lastInteractionStatus ? voter.lastInteractionStatus.replace('_', ' ') : 'Pending'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
                         </div>
                     </>
                 ) : (
@@ -250,76 +234,74 @@ const VoterUniverse: React.FC = () => {
                             <div className="atlas-help">No matches to review right now.</div>
                         ) : (
                             <div style={{ overflowX: 'auto' }}>
-                                <div className="atlas-card" style={{ overflow: 'hidden' }}>
-                                    <table className="atlas-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Lead (manual)</th>
-                                                <th>Imported voter</th>
-                                                <th>Reason</th>
-                                                <th></th>
+                                <Table>
+                                    <thead>
+                                        <tr>
+                                            <th>Lead (manual)</th>
+                                            <th>Imported voter</th>
+                                            <th>Reason</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {mergeAlerts.map((a: any) => (
+                                            <tr key={a.id}>
+                                                <td>
+                                                    <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>
+                                                        {a.lead_first_name} {a.lead_last_name}
+                                                    </div>
+                                                    <div className="atlas-help atlas-mono" style={{ marginTop: 4 }}>{a.lead_phone || 'No phone'}</div>
+                                                    <div className="atlas-help" style={{ marginTop: 2 }}>{a.lead_address}, {a.lead_city} {a.lead_state} {a.lead_zip}</div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>
+                                                        {a.imported_first_name} {a.imported_last_name}
+                                                    </div>
+                                                    <div className="atlas-help atlas-mono" style={{ marginTop: 4 }}>Reg #: {a.imported_external_id}</div>
+                                                    <div className="atlas-help atlas-mono" style={{ marginTop: 2 }}>{a.imported_phone || 'No phone'}</div>
+                                                    <div className="atlas-help" style={{ marginTop: 2 }}>{a.imported_address}, {a.imported_city} {a.imported_state} {a.imported_zip}</div>
+                                                </td>
+                                                <td className="atlas-help">{a.reason}</td>
+                                                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                                    <div style={{ display: 'inline-flex', gap: 8 }}>
+                                                        <Button
+                                                            variant="critical"
+                                                            onClick={async () => {
+                                                                try {
+                                                                    if (typeof (context.client as any).mergeLeadIntoVoter !== 'function') return;
+                                                                    await (context.client as any).mergeLeadIntoVoter(a.lead_voter_id, a.imported_voter_id);
+                                                                    if (typeof (context.client as any).updateMergeAlert === 'function') {
+                                                                        await (context.client as any).updateMergeAlert(a.id, 'resolved');
+                                                                    }
+                                                                    await refreshData();
+                                                                    await loadMergeAlerts();
+                                                                } catch (e: any) {
+                                                                    setMergeError(e?.message || 'Merge failed');
+                                                                }
+                                                            }}
+                                                        >
+                                                            Merge
+                                                        </Button>
+                                                        <Button
+                                                            variant="secondary"
+                                                            onClick={async () => {
+                                                                try {
+                                                                    if (typeof (context.client as any).updateMergeAlert !== 'function') return;
+                                                                    await (context.client as any).updateMergeAlert(a.id, 'dismissed');
+                                                                    await loadMergeAlerts();
+                                                                } catch (e: any) {
+                                                                    setMergeError(e?.message || 'Dismiss failed');
+                                                                }
+                                                            }}
+                                                        >
+                                                            Dismiss
+                                                        </Button>
+                                                    </div>
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            {mergeAlerts.map((a: any) => (
-                                                <tr key={a.id}>
-                                                    <td>
-                                                        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>
-                                                            {a.lead_first_name} {a.lead_last_name}
-                                                        </div>
-                                                        <div className="atlas-help atlas-mono" style={{ marginTop: 4 }}>{a.lead_phone || 'No phone'}</div>
-                                                        <div className="atlas-help" style={{ marginTop: 2 }}>{a.lead_address}, {a.lead_city} {a.lead_state} {a.lead_zip}</div>
-                                                    </td>
-                                                    <td>
-                                                        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>
-                                                            {a.imported_first_name} {a.imported_last_name}
-                                                        </div>
-                                                        <div className="atlas-help atlas-mono" style={{ marginTop: 4 }}>Reg #: {a.imported_external_id}</div>
-                                                        <div className="atlas-help atlas-mono" style={{ marginTop: 2 }}>{a.imported_phone || 'No phone'}</div>
-                                                        <div className="atlas-help" style={{ marginTop: 2 }}>{a.imported_address}, {a.imported_city} {a.imported_state} {a.imported_zip}</div>
-                                                    </td>
-                                                    <td className="atlas-help">{a.reason}</td>
-                                                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                                        <div style={{ display: 'inline-flex', gap: 8 }}>
-                                                            <Button
-                                                                variant="critical"
-                                                                onClick={async () => {
-                                                                    try {
-                                                                        if (typeof (context.client as any).mergeLeadIntoVoter !== 'function') return;
-                                                                        await (context.client as any).mergeLeadIntoVoter(a.lead_voter_id, a.imported_voter_id);
-                                                                        if (typeof (context.client as any).updateMergeAlert === 'function') {
-                                                                            await (context.client as any).updateMergeAlert(a.id, 'resolved');
-                                                                        }
-                                                                        await refreshData();
-                                                                        await loadMergeAlerts();
-                                                                    } catch (e: any) {
-                                                                        setMergeError(e?.message || 'Merge failed');
-                                                                    }
-                                                                }}
-                                                            >
-                                                                Merge
-                                                            </Button>
-                                                            <Button
-                                                                variant="secondary"
-                                                                onClick={async () => {
-                                                                    try {
-                                                                        if (typeof (context.client as any).updateMergeAlert !== 'function') return;
-                                                                        await (context.client as any).updateMergeAlert(a.id, 'dismissed');
-                                                                        await loadMergeAlerts();
-                                                                    } catch (e: any) {
-                                                                        setMergeError(e?.message || 'Dismiss failed');
-                                                                    }
-                                                                }}
-                                                            >
-                                                                Dismiss
-                                                            </Button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        ))}
+                                    </tbody>
+                                </Table>
                             </div>
                         )}
                     </div>

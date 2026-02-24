@@ -1,187 +1,217 @@
-
 import React, { useState, useContext } from 'react';
 import { AppContext } from './AppContext';
 import { Voter } from '../types';
 import { XMarkIcon, UserPlusIcon } from '@heroicons/react/24/outline';
+import { Card } from '../src/design/components/Card';
+import { Button } from '../src/design/components/Button';
 
 interface AddVoterModalProps {
-    onClose: () => void;
-    onSuccess: () => void;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 const AddVoterModal: React.FC<AddVoterModalProps> = ({ onClose, onSuccess }) => {
-    const context = useContext(AppContext);
-    const [formData, setFormData] = useState<Partial<Voter>>({
-        firstName: '',
-        lastName: '',
-        address: '',
-        city: '',
-        state: '',
-        zip: '',
-        party: 'Unenrolled',
-        phone: ''
-    });
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const context = useContext(AppContext);
 
-    const handleChange = (field: keyof Voter, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        if (error) setError(null);
-    };
+  const [formData, setFormData] = useState<Partial<Voter>>({
+    firstName: '',
+    lastName: '',
+    address: '',
+    city: '',
+    state: '',
+    zip: '',
+    party: 'Unenrolled',
+    phone: '',
+  });
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        // Validation
-        if (!formData.firstName || !formData.lastName || !formData.address) {
-            setError('First Name, Last Name, and Address are required.');
-            return;
-        }
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-        if (!context) return;
+  const handleChange = (field: keyof Voter, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (error) setError(null);
+  };
 
-        setSaving(true);
-        try {
-            await context.client.addVoter(formData);
-            onSuccess();
-        } catch (err: any) {
-            console.error("Failed to add voter", err);
-            setError(err.message || 'Failed to create voter record.');
-        } finally {
-            setSaving(false);
-        }
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden">
-                <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50">
-                    <div className="flex items-center">
-                        <div className="p-2 bg-indigo-100 rounded-full mr-3">
-                            <UserPlusIcon className="h-6 w-6 text-indigo-600" />
-                        </div>
-                        <h2 className="text-xl font-bold text-gray-800">Add New Voter</h2>
-                    </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-                        <XMarkIcon className="h-6 w-6" />
-                    </button>
-                </div>
+    // Validation
+    if (!formData.firstName || !formData.lastName || !formData.address) {
+      setError('First Name, Last Name, and Address are required.');
+      return;
+    }
 
-                <form onSubmit={handleSubmit} className="p-6">
-                    {error && (
-                        <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-100">
-                            {error}
-                        </div>
-                    )}
+    if (!context) return;
 
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">First Name <span className="text-red-500">*</span></label>
-                            <input 
-                                type="text"
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                value={formData.firstName}
-                                onChange={e => handleChange('firstName', e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Last Name <span className="text-red-500">*</span></label>
-                            <input 
-                                type="text"
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                value={formData.lastName}
-                                onChange={e => handleChange('lastName', e.target.value)}
-                            />
-                        </div>
-                    </div>
+    setSaving(true);
+    try {
+      await context.client.addVoter(formData);
+      onSuccess();
+    } catch (err: any) {
+      console.error('Failed to add voter', err);
+      setError(err.message || 'Failed to create voter record.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
-                    <div className="mb-4">
-                        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Street Address <span className="text-red-500">*</span></label>
-                        <input 
-                            type="text"
-                            placeholder="123 Main St"
-                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            value={formData.address}
-                            onChange={e => handleChange('address', e.target.value)}
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                        <div className="col-span-1">
-                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">City</label>
-                            <input 
-                                type="text"
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                value={formData.city}
-                                onChange={e => handleChange('city', e.target.value)}
-                            />
-                        </div>
-                        <div className="col-span-1">
-                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">State</label>
-                            <input 
-                                type="text"
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                value={formData.state}
-                                onChange={e => handleChange('state', e.target.value)}
-                            />
-                        </div>
-                         <div className="col-span-1">
-                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Zip</label>
-                            <input 
-                                type="text"
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                value={formData.zip}
-                                onChange={e => handleChange('zip', e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Party</label>
-                            <select 
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                value={formData.party}
-                                onChange={e => handleChange('party', e.target.value)}
-                            >
-                                <option value="Unenrolled">Unenrolled</option>
-                                <option value="Democrat">Democrat</option>
-                                <option value="Republican">Republican</option>
-                                <option value="Independent">Independent</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                         <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Phone (Optional)</label>
-                            <input 
-                                type="tel"
-                                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                value={formData.phone}
-                                onChange={e => handleChange('phone', e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
-                        <button 
-                            type="button" 
-                            onClick={onClose} 
-                            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium"
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            type="submit" 
-                            disabled={saving}
-                            className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium shadow-sm flex items-center"
-                        >
-                            {saving ? 'Adding...' : 'Add Voter'}
-                        </button>
-                    </div>
-                </form>
+  return (
+    <div className="atlas-modal-overlay" role="dialog" aria-modal="true">
+      <Card className="atlas-modal" style={{ padding: 0 }}>
+        <div className="atlas-modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              className="atlas-card"
+              style={{
+                width: 36,
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '999px',
+              }}
+            >
+              <UserPlusIcon style={{ width: 18, height: 18, color: 'var(--color-primary)' }} />
             </div>
+            <div>
+              <div className="atlas-label">Lead</div>
+              <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18 }}>Add New Voter</div>
+            </div>
+          </div>
+
+          <Button variant="secondary" onClick={onClose} aria-label="Close">
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <XMarkIcon style={{ width: 18, height: 18 }} />
+              Close
+            </span>
+          </Button>
         </div>
-    );
+
+        <form onSubmit={handleSubmit}>
+          <div className="atlas-modal-body">
+            {error ? (
+              <div className="atlas-error" style={{ marginBottom: 12 }}>
+                {error}
+              </div>
+            ) : null}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div>
+                <div className="atlas-label" style={{ marginBottom: 6 }}>
+                  First Name <span className="atlas-mono">*</span>
+                </div>
+                <input
+                  type="text"
+                  className="atlas-input"
+                  value={formData.firstName}
+                  onChange={(e) => handleChange('firstName', e.target.value)}
+                />
+              </div>
+              <div>
+                <div className="atlas-label" style={{ marginBottom: 6 }}>
+                  Last Name <span className="atlas-mono">*</span>
+                </div>
+                <input
+                  type="text"
+                  className="atlas-input"
+                  value={formData.lastName}
+                  onChange={(e) => handleChange('lastName', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div className="atlas-label" style={{ marginBottom: 6 }}>
+                Street Address <span className="atlas-mono">*</span>
+              </div>
+              <input
+                type="text"
+                placeholder="123 Main St"
+                className="atlas-input"
+                value={formData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div>
+                <div className="atlas-label" style={{ marginBottom: 6 }}>
+                  City
+                </div>
+                <input
+                  type="text"
+                  className="atlas-input"
+                  value={formData.city}
+                  onChange={(e) => handleChange('city', e.target.value)}
+                />
+              </div>
+              <div>
+                <div className="atlas-label" style={{ marginBottom: 6 }}>
+                  State
+                </div>
+                <input
+                  type="text"
+                  className="atlas-input"
+                  value={formData.state}
+                  onChange={(e) => handleChange('state', e.target.value)}
+                />
+              </div>
+              <div>
+                <div className="atlas-label" style={{ marginBottom: 6 }}>
+                  Zip
+                </div>
+                <input
+                  type="text"
+                  className="atlas-input"
+                  value={formData.zip}
+                  onChange={(e) => handleChange('zip', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <div className="atlas-label" style={{ marginBottom: 6 }}>
+                  Party
+                </div>
+                <select
+                  className="atlas-input"
+                  value={formData.party}
+                  onChange={(e) => handleChange('party', e.target.value)}
+                >
+                  <option value="Unenrolled">Unenrolled</option>
+                  <option value="Democrat">Democrat</option>
+                  <option value="Republican">Republican</option>
+                  <option value="Independent">Independent</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <div className="atlas-label" style={{ marginBottom: 6 }}>
+                  Phone (Optional)
+                </div>
+                <input
+                  type="tel"
+                  className="atlas-input"
+                  value={formData.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="atlas-modal-footer">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" disabled={saving}>
+              {saving ? 'Adding…' : 'Add Voter'}
+            </Button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
 };
 
 export default AddVoterModal;

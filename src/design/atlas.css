@@ -435,3 +435,51 @@ body {
   opacity: 0.3;
   cursor: not-allowed;
 }
+
+/* Modal primitives */
+.atlas-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.50);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.atlas-modal {
+  width: 100%;
+  max-width: 720px;
+  max-height: 85vh;
+  overflow: auto;
+  padding: 16px;
+}
+
+.atlas-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(209, 217, 224, 0.65);
+}
+
+.atlas-modal-body {
+  padding: 16px;
+}
+
+.atlas-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px;
+  border-top: 1px solid rgba(209, 217, 224, 0.65);
+}
+
+.atlas-center {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

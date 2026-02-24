@@ -69,7 +69,11 @@ const App: React.FC = () => {
     }, [refreshData]);
 
     if (loading) {
-        return <div className="flex h-screen items-center justify-center text-gray-500">Loading Campaign Core...</div>;
+        return (
+            <div className="atlas-center">
+                <div className="atlas-help">Loading Campaign Core…</div>
+            </div>
+        );
     }
 
     // If we have no authenticated user, show login instead of rendering a blank app.
@@ -108,8 +112,7 @@ const App: React.FC = () => {
                     <Sidebar />
                     <main className="atlas-main">
                         <div className="atlas-content">
-                            <div className="container mx-auto px-6 py-8">
-                                <Routes>
+                            <Routes>
                                     <Route path="/" element={<Navigate to="/dashboard" />} />
                                     <Route path="/dashboard" element={<Dashboard />} />
                                     
@@ -131,8 +134,7 @@ const App: React.FC = () => {
                                     )}
                                     {/* Fallback for admin trying to view canvasser portal or generic */}
                                     <Route path="/my-turf" element={<CanvasserPortal />} />
-                                </Routes>
-                            </div>
+                            </Routes>
                         </div>
                     </main>
                 </div>

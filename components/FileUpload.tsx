@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState, useContext } from 'react';
 import { AppContext } from './AppContext';
 import { JobStatus } from '../types';
 import { ClockIcon, CheckCircleIcon, XCircleIcon, DocumentIcon } from '@heroicons/react/24/outline';
+import { Card } from '../src/design/components/Card';
+import { Button } from '../src/design/components/Button';
 
 /**
  * Phase 2 hardening note:
@@ -100,7 +102,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose, onComplete }) => {
     if (!f) return;
 
     if (f.size > MAX_FILE_SIZE_BYTES) {
-      setError(`File is too large (${(f.size / 1024 / 1024).toFixed(2)}MB). Limit is ${(MAX_FILE_SIZE_BYTES / 1024 / 1024).toFixed(0)}MB.`);
+      setError(
+        `File is too large (${(f.size / 1024 / 1024).toFixed(2)}MB). Limit is ${(MAX_FILE_SIZE_BYTES / 1024 / 1024).toFixed(0)}MB.`
+      );
       return;
     }
 
@@ -129,7 +133,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose, onComplete }) => {
       setJobId(job.id);
 
       if (job?.duplicate_of_job_id) {
-        setError('Heads up: this looks like the same file you uploaded before. Re-importing will update voter records but won’t duplicate canvassing interactions.');
+        setError(
+          'Heads up: this looks like the same file you uploaded before. Re-importing will update voter records but won’t duplicate canvassing interactions.'
+        );
       }
 
       void pollJob(job.id);
@@ -160,7 +166,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose, onComplete }) => {
     if (!uploading) return '';
 
     // Campaign/field organizer friendly language
-    if (phase === 'writing_voters' && hasCounts) return `Adding ${processedRows.toLocaleString()} / ${totalRows.toLocaleString()} voters to your universe…`;
+    if (phase === 'writing_voters' && hasCounts)
+      return `Adding ${processedRows.toLocaleString()} / ${totalRows.toLocaleString()} voters to your universe…`;
     if (phase === 'finalizing') return 'Finalizing voter import…';
     if (phase === 'parsing_rows') return 'Checking rows and matching columns…';
     if (phase === 'reading_file') return 'Reading your file…';
@@ -224,112 +231,151 @@ const FileUpload: React.FC<FileUploadProps> = ({ onClose, onComplete }) => {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-2xl h-[70vh] flex flex-col">
-        <div className="flex justify-between items-center mb-4 flex-shrink-0">
-          <h2 className="text-2xl font-bold">Voter Import</h2>
+    <div className="atlas-modal-overlay" role="dialog" aria-modal="true">
+      <Card className="atlas-modal" style={{ padding: 0, maxWidth: 840 }}>
+        <div className="atlas-modal-header">
+          <div>
+            <div className="atlas-label">Import</div>
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18 }}>Voter Import</div>
+          </div>
+          <Button variant="secondary" onClick={onClose}>
+            Close
+          </Button>
         </div>
 
-        {jobStatus === 'completed' ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircleIcon className="h-10 w-10 text-green-600" />
+        <div className="atlas-modal-body">
+          {jobStatus === 'completed' ? (
+            <div style={{ padding: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <CheckCircleIcon style={{ width: 22, height: 22, color: 'var(--color-action)' }} />
+                <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 16 }}>Import Successful</div>
+              </div>
+              <div className="atlas-help">Your file was processed by the worker.</div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">Import Successful</h3>
-            <p className="text-gray-600 mb-8">Your file was processed by the worker.</p>
-            <button onClick={onClose} className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium">Close</button>
-          </div>
-        ) : uploading ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <ClockIcon className="h-12 w-12 text-indigo-500 animate-spin mb-4" />
-            <h3 className="text-xl font-bold text-gray-800">Voter import in progress</h3>
-            <p className="text-gray-600 mt-2">{primaryText}</p>
+          ) : uploading ? (
+            <div style={{ padding: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <ClockIcon style={{ width: 18, height: 18, color: 'var(--color-primary)' }} />
+                <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 16 }}>Import in progress</div>
+              </div>
+              <div className="atlas-help" style={{ marginTop: 6 }}>
+                {primaryText}
+              </div>
+              {etaText ? (
+                <div className="atlas-help" style={{ marginTop: 4 }}>
+                  {etaText}
+                </div>
+              ) : null}
+              {secondaryText ? (
+                <div className="atlas-help" style={{ marginTop: 6, opacity: 0.75 }}>
+                  {secondaryText}
+                </div>
+              ) : null}
 
-            {etaText && <p className="text-sm text-gray-500 mt-1">{etaText}</p>}
-            {secondaryText && <p className="text-xs text-gray-400 mt-2 max-w-md">{secondaryText}</p>}
+              <div className="atlas-help atlas-mono" style={{ marginTop: 10, opacity: 0.65 }}>
+                Job: {jobId || '—'}
+              </div>
 
-            <p className="text-xs text-gray-300 mt-3">Job ID: {jobId}</p>
-
-            <div className="w-80 bg-gray-200 rounded-full h-2.5 mt-5 overflow-hidden">
-              {pct === null ? (
-                <div className="bg-indigo-600 h-2.5 rounded-full w-2/3 animate-pulse"></div>
-              ) : (
-                <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${pct}%` }}></div>
-              )}
-            </div>
-
-            <div className="mt-6 flex items-center gap-3">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium shadow-sm"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  if (jobId) {
-                    pollAttemptRef.current += 1;
-                    void pollJob(jobId);
-                  }
-                }}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium shadow-sm"
-              >
-                Refresh status
-              </button>
-            </div>
-
-            <p className="text-xs text-gray-400 mt-4">We’ll keep checking in automatically every few seconds.</p>
-          </div>
-        ) : (
-          <>
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md flex items-start">
-                <XCircleIcon className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
-                <div className="text-sm text-red-700">
-                  <span className="font-bold">Import Error:</span> {error}
+              <div className="atlas-card" style={{ marginTop: 12, padding: 10 }}>
+                <div
+                  style={{
+                    height: 10,
+                    borderRadius: 999,
+                    background: 'rgba(209, 217, 224, 0.65)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      height: 10,
+                      width: pct === null ? '66%' : `${pct}%`,
+                      background: 'var(--color-action)',
+                      transition: 'width 250ms ease',
+                    }}
+                  />
                 </div>
               </div>
-            )}
 
-            <div className="flex-1 flex flex-col justify-center">
-              <div className="p-4 bg-gray-50 border-l-4 border-indigo-400 text-sm text-gray-600 mb-4 rounded-r-md">
-                <h4 className="font-bold text-gray-800 mb-1 flex items-center">
-                  <DocumentIcon className="h-4 w-4 mr-1" /> Requirements
-                </h4>
-                <ul className="list-disc ml-5 space-y-1">
+              <div style={{ marginTop: 12, display: 'flex', gap: 10 }}>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    if (jobId) {
+                      pollAttemptRef.current += 1;
+                      void pollJob(jobId);
+                    }
+                  }}
+                >
+                  Refresh status
+                </Button>
+              </div>
+
+              <div className="atlas-help" style={{ marginTop: 10, opacity: 0.75 }}>
+                We’ll keep checking in automatically.
+              </div>
+            </div>
+          ) : (
+            <>
+              {error ? (
+                <div className="atlas-error" style={{ marginBottom: 12, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <XCircleIcon style={{ width: 18, height: 18 }} />
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}>Import error</div>
+                    <div className="atlas-help" style={{ marginTop: 4, opacity: 0.9 }}>
+                      {error}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="atlas-card" style={{ padding: 12, marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <DocumentIcon style={{ width: 16, height: 16 }} />
+                  <div className="atlas-label">Requirements</div>
+                </div>
+                <ul className="atlas-help" style={{ marginTop: 8, marginLeft: 18 }}>
                   <li>CSV or XLSX</li>
                   <li>Max Size: {(MAX_FILE_SIZE_BYTES / 1024 / 1024).toFixed(0)}MB</li>
                   <li>Import runs asynchronously (you can keep using the app)</li>
                 </ul>
               </div>
 
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-10 text-center hover:bg-gray-50 transition-colors">
-                <p className="mb-4 text-gray-600">Select a voter file to upload.</p>
-                <input type="file" accept=".csv,.xlsx" onChange={handleFileChange} className="hidden" id="file-upload" />
-                <label htmlFor="file-upload" className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                  Browse Files
-                </label>
-                {file && (
-                  <div className="mt-4 text-sm text-gray-700">
-                    Selected: <span className="font-semibold">{file.name}</span> ({(file.size / 1024 / 1024).toFixed(2)}MB)
+              <Card style={{ padding: 16 }}>
+                <div className="atlas-help" style={{ marginBottom: 10 }}>
+                  Select a voter file to upload.
+                </div>
+                <input type="file" accept=".csv,.xlsx" onChange={handleFileChange} style={{ display: 'block' }} />
+                {file ? (
+                  <div className="atlas-help" style={{ marginTop: 10 }}>
+                    Selected: <span className="atlas-mono">{file.name}</span> ({(file.size / 1024 / 1024).toFixed(2)}MB)
                   </div>
-                )}
-              </div>
-            </div>
+                ) : null}
+              </Card>
+            </>
+          )}
+        </div>
 
-            <div className="mt-6 flex justify-end space-x-4 flex-shrink-0 pt-4 border-t border-gray-100">
-              <button onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-medium shadow-sm">Cancel</button>
-              <button
-                onClick={startImport}
-                disabled={!file}
-                className="px-6 py-2 text-white rounded-md font-medium shadow-md transition-all bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg disabled:opacity-50"
-              >
+        <div className="atlas-modal-footer">
+          {jobStatus === 'completed' ? (
+            <Button variant="primary" onClick={onClose}>
+              Done
+            </Button>
+          ) : uploading ? (
+            <Button variant="secondary" onClick={onClose}>
+              Close
+            </Button>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={startImport} disabled={!file}>
                 Upload & Start Import
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+              </Button>
+            </>
+          )}
+        </div>
+      </Card>
     </div>
   );
 };
