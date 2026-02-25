@@ -16,6 +16,7 @@ const TurfCutter: React.FC = () => {
   const [filterParty, setFilterParty] = useState<string>('All');
   const [filterCity, setFilterCity] = useState<string>('All');
   const [listName, setListName] = useState('');
+  const [lastCreated, setLastCreated] = useState<{ listId: string; voterCount: number; completionPct: number } | null>(null);
 
   // Geolocation state
   const { location, error, loading, getLocation } = useGeolocation();
@@ -136,10 +137,23 @@ const TurfCutter: React.FC = () => {
         params.radius_km = radius;
       }
 
-      await (client as any).createFilterTurf(params);
+      const out = await (client as any).createFilterTurf(params);
       await refreshData();
       setListName('');
       setSelectedVoters([]);
+
+      const listId = out?.list?.id;
+      const meta = out?.metadata;
+      if (listId && meta) {
+        setLastCreated({
+          listId,
+          voterCount: Number(meta.voter_count) || 0,
+          completionPct: Math.round((Number(meta.completion_percentage) || 0) * 100),
+        });
+      } else {
+        setLastCreated(null);
+      }
+
       alert('Turf list created successfully!');
     } catch (e) {
       console.error(e);
@@ -315,7 +329,12 @@ const TurfCutter: React.FC = () => {
 
           {/* Save list */}
           <Card style={{ padding: 12 }}>
-            <div className="atlas-label">New walk list</div>
+            <div className="atlas-label">New turf</div>
+            {lastCreated ? (
+              <div className="atlas-help" style={{ marginTop: 6 }}>
+                Last created: <span className="atlas-mono">{lastCreated.listId}</span> • {lastCreated.voterCount} voters • {lastCreated.completionPct}% complete
+              </div>
+            ) : null}
             <input
               type="text"
               placeholder="New Walk List Name"
