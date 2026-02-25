@@ -113,19 +113,37 @@ const TurfCutter: React.FC = () => {
   };
 
   const handleSaveList = async () => {
-    if (!listName || selectedVoters.length === 0) {
-      alert('Please provide a list name and select at least one voter.');
+    if (!listName) {
+      alert('Please provide a list name.');
       return;
     }
+
     try {
-      await client.createWalkList(listName, selectedVoters);
+      const hasTurf = typeof (client as any).createFilterTurf === 'function';
+      if (!hasTurf) {
+        alert('Turf engine is not available in this environment.');
+        return;
+      }
+
+      const params: any = {
+        name: listName,
+        party: filterParty === 'All' ? null : filterParty,
+        city: filterCity === 'All' ? null : filterCity,
+      };
+
+      if (useProximity && location) {
+        params.center = { lat: location.lat, lng: location.lng };
+        params.radius_km = radius;
+      }
+
+      await (client as any).createFilterTurf(params);
       await refreshData();
       setListName('');
       setSelectedVoters([]);
-      alert('Walk list created successfully!');
+      alert('Turf list created successfully!');
     } catch (e) {
       console.error(e);
-      alert('Error creating list');
+      alert('Error creating turf');
     }
   };
 

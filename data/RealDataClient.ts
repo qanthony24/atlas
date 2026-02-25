@@ -265,4 +265,14 @@ export class RealDataClient implements IDataClient {
     async getGeographyMetrics(): Promise<any> {
         return this.request<any>('GET', `/metrics/geography`);
     }
+
+    // --- Phase 3: Turf Engine v1 ---
+
+    async createFilterTurf(params: { name: string; party?: string | null; city?: string | null; center?: { lat: number; lng: number } | null; radius_km?: number | null; }): Promise<any> {
+        return this.request<any>('POST', `/turfs/filter`, params);
+    }
+
+    async getTurfMetadata(listId: string): Promise<any> {
+        return this.request<any>('GET', `/turfs/${encodeURIComponent(listId)}/metadata`);
+    }
 }

@@ -28,6 +28,10 @@ export interface IDataClient {
     getVelocityMetrics?(): Promise<any>;
     getGeographyMetrics?(): Promise<any>;
 
+    // --- Phase 3: Turf Engine v1 ---
+    createFilterTurf?(params: { name: string; party?: string | null; city?: string | null; center?: { lat: number; lng: number } | null; radius_km?: number | null; }): Promise<any>;
+    getTurfMetadata?(listId: string): Promise<any>;
+
     // --- Session & Identity ---
     /** Returns the currently authenticated user with context. Throws if no session. */
     getCurrentUser(): Promise<User>;
@@ -573,6 +577,27 @@ export class MockDataClient implements IDataClient {
 
     async getGeographyMetrics(): Promise<any> {
         return this.executeWithContext('getGeographyMetrics', async () => ({ units: this.geographyUnits }));
+    }
+
+    async createFilterTurf(params: { name: string; party?: string | null; city?: string | null; center?: { lat: number; lng: number } | null; radius_km?: number | null; }): Promise<any> {
+        return this.executeWithContext('createFilterTurf', async () => {
+            const party = params.party && params.party !== 'All' ? params.party : null;
+            const city = params.city && params.city !== 'All' ? params.city : null;
+
+            const filtered = this.voters.filter(v => {
+                if (party && v.party !== party) return false;
+                if (city && v.city !== city) return false;
+                // radius ignored in mock
+                return true;
+            });
+
+            const list = await this.createWalkList(params.name, filtered.map(v => v.id));
+            return { list, metadata: { voter_count: filtered.length, unit_ids: [], completion_percentage: 0 } };
+        });
+    }
+
+    async getTurfMetadata(_listId: string): Promise<any> {
+        return this.executeWithContext('getTurfMetadata', async () => ({ voter_count: 0, unit_ids: [], completion_percentage: 0 }));
     }
 }
 
