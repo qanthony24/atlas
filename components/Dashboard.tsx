@@ -9,12 +9,6 @@ import { Card } from '../src/design/components/Card';
 import { StatBlock } from '../src/design/components/StatBlock';
 import { Table } from '../src/design/components/Table';
 
-const TableShell = ({ children }: { children: React.ReactNode }) => (
-    <div className="atlas-card" style={{ overflow: 'hidden' }}>
-        <table className="atlas-table">{children}</table>
-    </div>
-);
-
 const BigIcon = (IconCmp: any) => <IconCmp style={{ width: 28, height: 28 }} />;
 
 
@@ -26,22 +20,48 @@ const Dashboard: React.FC = () => {
 
     const [mergeAlertCount, setMergeAlertCount] = useState<number | null>(null);
 
+    // Phase 3 metrics (admin)
+    const [overview, setOverview] = useState<any | null>(null);
+    const [goalProgress, setGoalProgress] = useState<any | null>(null);
+    const [velocity, setVelocity] = useState<any | null>(null);
+
     useEffect(() => {
-        // Admin-only: show a notice when manual leads likely match imported voters.
         if (currentUser.role !== 'admin') return;
         let cancelled = false;
 
         (async () => {
+            // Admin-only: show a notice when manual leads likely match imported voters.
             try {
-                if (typeof (context.client as any).getMergeAlertCount !== 'function') return;
-                const res = await (context.client as any).getMergeAlertCount();
-                if (!cancelled) setMergeAlertCount(Number(res?.open_count ?? 0));
+                if (typeof (context.client as any).getMergeAlertCount === 'function') {
+                    const res = await (context.client as any).getMergeAlertCount();
+                    if (!cancelled) setMergeAlertCount(Number(res?.open_count ?? 0));
+                }
             } catch {
                 if (!cancelled) setMergeAlertCount(null);
             }
+
+            // Phase 3: pull aggregate metrics for campaign overview
+            try {
+                if (typeof (context.client as any).getCampaignOverviewMetrics === 'function') {
+                    const o = await (context.client as any).getCampaignOverviewMetrics();
+                    if (!cancelled) setOverview(o);
+                }
+                if (typeof (context.client as any).getGoalProgressMetrics === 'function') {
+                    const g = await (context.client as any).getGoalProgressMetrics();
+                    if (!cancelled) setGoalProgress(g);
+                }
+                if (typeof (context.client as any).getVelocityMetrics === 'function') {
+                    const v = await (context.client as any).getVelocityMetrics();
+                    if (!cancelled) setVelocity(v);
+                }
+            } catch {
+                // Keep dashboard resilient; it can still render local stats.
+            }
         })();
 
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [context.client, currentUser.role]);
     
     // Logic for Admin
@@ -155,8 +175,27 @@ const Dashboard: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
                 <StatBlock label="Total Voters" value={voters.length} icon={BigIcon(UserGroupIcon)} />
                 <StatBlock label="Active Walk Lists" value={walkLists.length} icon={BigIcon(DocumentTextIcon)} />
-                <StatBlock label="Doors Knocked" value={interactions.length} icon={BigIcon(ChartBarIcon)} />
-                <StatBlock label="Total Progress" value={`${globalCompletionPercentage}%`} icon={BigIcon(CheckCircleIcon)} />
+
+                <StatBlock
+                    label="Doors"
+                    value={overview?.progress?.doors?.current ?? interactions.length}
+                    icon={BigIcon(ChartBarIcon)}
+                />
+                <StatBlock
+                    label="Contacts"
+                    value={overview?.progress?.contacts?.current ?? globalCanvassedCount}
+                    icon={BigIcon(CheckCircleIcon)}
+                />
+                <StatBlock
+                    label="IDs"
+                    value={overview?.progress?.ids?.current ?? 0}
+                    icon={BigIcon(CheckCircleIcon)}
+                />
+                <StatBlock
+                    label="Win #"
+                    value={overview?.progress?.win_number_target ?? '—'}
+                    icon={BigIcon(CheckCircleIcon)}
+                />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 16, marginTop: 16 }}>
@@ -165,7 +204,7 @@ const Dashboard: React.FC = () => {
                         <div className="atlas-label">Live Interaction Stream</div>
                         <div className="atlas-mono" style={{ fontSize: 11, opacity: 0.7 }}>live</div>
                     </div>
-                    <TableShell>
+                    <Table>
                         <thead>
                             <tr>
                                 <th>Voter</th>
@@ -186,35 +225,42 @@ const Dashboard: React.FC = () => {
                                 );
                             })}
                         </tbody>
-                    </TableShell>
+                    </Table>
                     <div style={{ padding: 12, borderTop: '1px solid var(--color-border)' }}>
                         <Link to="/live" style={{ color: 'var(--color-action)', textDecoration: 'none', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 12 }}>View Live Map →</Link>
                     </div>
                 </Card>
 
                 <Card style={{ padding: 16 }}>
-                    <div className="atlas-label" style={{ marginBottom: 12 }}>Regional Turf Progress</div>
-                    <div style={{ display: 'grid', gap: 14 }}>
-                        {walkLists.map(list => {
-                            const assignment = assignments.find(a => a.listId === list.id);
-                            const listInteractions = interactions.filter(i => assignment && i.assignment_id === assignment.id).length;
-                            const progress = list.voterIds.length > 0 ? Math.round((listInteractions / list.voterIds.length) * 100) : 0;
-
-                            return (
-                                <div key={list.id}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                        <div>
-                                            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}>{list.name}</div>
-                                            <div className="atlas-help">{list.voterIds.length} targeted voters</div>
+                    <div className="atlas-label" style={{ marginBottom: 12 }}>Goals</div>
+                    <div style={{ display: 'grid', gap: 10 }}>
+                        {Array.isArray(goalProgress?.goals) && goalProgress.goals.length > 0 ? (
+                            goalProgress.goals.map((g: any) => {
+                                const pct = Math.round(Math.max(0, Math.min(1, Number(g.completion_pct) || 0)) * 100);
+                                return (
+                                    <div key={g.goal_id || g.id}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}>
+                                                {String(g.goal_type).toUpperCase()}
+                                            </div>
+                                            <div className="atlas-mono">{g.current_value} / {g.target_value}</div>
                                         </div>
-                                        <div className="atlas-chip">{progress}%</div>
+                                        <div style={{ height: 10, border: '1px solid var(--color-border)', borderRadius: 'var(--radius-drafting)', overflow: 'hidden', background: 'rgba(244,247,249,0.92)' }}>
+                                            <div style={{ height: '100%', width: `${pct}%`, background: 'var(--color-action)' }} />
+                                        </div>
+                                        <div className="atlas-help" style={{ marginTop: 6 }}>{pct}%</div>
                                     </div>
-                                    <div style={{ height: 10, border: '1px solid var(--color-border)', borderRadius: 'var(--radius-drafting)', overflow: 'hidden', background: 'rgba(244,247,249,0.92)' }}>
-                                        <div style={{ height: '100%', width: `${progress}%`, background: 'var(--color-action)' }} />
-                                    </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })
+                        ) : (
+                            <div className="atlas-help">No goals yet. Add them in Campaign Setup.</div>
+                        )}
+                    </div>
+
+                    <div style={{ paddingTop: 12 }}>
+                        <Link to="/campaign-setup" style={{ color: 'var(--color-action)', textDecoration: 'none', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 12 }}>
+                            Open Campaign Setup →
+                        </Link>
                     </div>
                 </Card>
             </div>

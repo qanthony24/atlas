@@ -247,4 +247,22 @@ export class RealDataClient implements IDataClient {
     async upsertGeographyUnit(unit: Partial<GeographyUnit>): Promise<GeographyUnit> {
         return this.request<GeographyUnit>('POST', `/geography/units`, unit);
     }
+
+    // --- Phase 3: Metrics (Goal Engine + Aggregates) ---
+
+    async getCampaignOverviewMetrics(): Promise<any> {
+        return this.request<any>('GET', `/metrics/campaign/overview`);
+    }
+
+    async getGoalProgressMetrics(): Promise<any> {
+        return this.request<any>('GET', `/metrics/goals`);
+    }
+
+    async getVelocityMetrics(): Promise<any> {
+        return this.request<any>('GET', `/metrics/velocity`);
+    }
+
+    async getGeographyMetrics(): Promise<any> {
+        return this.request<any>('GET', `/metrics/geography`);
+    }
 }

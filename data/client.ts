@@ -22,6 +22,12 @@ export interface IDataClient {
     getGeographyUnits?(): Promise<any>;
     upsertGeographyUnit?(unit: Partial<any>): Promise<any>;
 
+    // --- Phase 3: Metrics (Goal Engine + Aggregates) ---
+    getCampaignOverviewMetrics?(): Promise<any>;
+    getGoalProgressMetrics?(): Promise<any>;
+    getVelocityMetrics?(): Promise<any>;
+    getGeographyMetrics?(): Promise<any>;
+
     // --- Session & Identity ---
     /** Returns the currently authenticated user with context. Throws if no session. */
     getCurrentUser(): Promise<User>;
@@ -525,6 +531,48 @@ export class MockDataClient implements IDataClient {
             this.logAudit('geography_unit.upsert', row);
             return row;
         });
+    }
+
+    async getCampaignOverviewMetrics(): Promise<any> {
+        return this.executeWithContext('getCampaignOverviewMetrics', async () => {
+            const contacts = this.interactions.filter(i => i.result_code === 'contacted');
+            // In mock, treat IDs as contacted with support_level provided (rare), so default 0.
+            const ids = this.interactions.filter(i => i.result_code === 'contacted' && (i.survey_responses as any)?.support_level != null);
+            return {
+                profile: this.campaignProfile,
+                progress: {
+                    doors: { current: this.interactions.length, label: 'Doors knocked' },
+                    contacts: { current: contacts.length, label: 'Contacts' },
+                    ids: { current: ids.length, label: 'IDs (support captured)' },
+                    win_number_target: this.campaignProfile?.win_number_target ?? null,
+                },
+                updated_at: new Date().toISOString(),
+            };
+        });
+    }
+
+    async getGoalProgressMetrics(): Promise<any> {
+        return this.executeWithContext('getGoalProgressMetrics', async () => {
+            // Very light mock: just echo goals
+            return { goals: this.campaignGoals.map(g => ({
+                id: `gp-${g.id}`,
+                org_id: this.currentOrg.id,
+                goal_id: g.id,
+                goal_type: g.goal_type,
+                target_value: g.target_value,
+                current_value: 0,
+                completion_pct: 0,
+                updated_at: new Date().toISOString(),
+            })) };
+        });
+    }
+
+    async getVelocityMetrics(): Promise<any> {
+        return this.executeWithContext('getVelocityMetrics', async () => ({ series: [] }));
+    }
+
+    async getGeographyMetrics(): Promise<any> {
+        return this.executeWithContext('getGeographyMetrics', async () => ({ units: this.geographyUnits }));
     }
 }
 
